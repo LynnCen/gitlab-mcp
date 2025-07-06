@@ -169,9 +169,7 @@ async function main(): Promise<void> {
 }
 
 // 运行主函数
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((error) => {
-    console.error('未处理的错误:', error);
-    process.exit(1);
-  });
-} 
+main().catch((error) => {
+  console.error('未处理的错误:', error);
+  process.exit(1);
+}); 
