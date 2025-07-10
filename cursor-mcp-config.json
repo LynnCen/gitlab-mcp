@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "gitlab-mcp": {
+      "command": "node",
+      "args": ["/path/to/gitlab-mcp/dist/index.js"],
+      "env": {
+        "GITLAB_HOST": "https://gitlab.com",
+        "GITLAB_TOKEN": "your-gitlab-token-here"
+      }
+    }
+  }
+} 
