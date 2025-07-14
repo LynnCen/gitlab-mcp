@@ -72,6 +72,74 @@
    ```
    如果看到"✅ 已连接到GitLab"消息，说明配置成功。
 
+## 🖥️ 在Cursor中使用
+
+### 配置步骤
+
+1. **构建项目**
+   ```bash
+   pnpm run build
+   ```
+
+2. **获取绝对路径**
+   ```bash
+   pwd
+   # 输出类似: /Users/username/projects/gitlab-mcp
+   ```
+
+3. **配置Cursor MCP设置**
+
+   打开Cursor设置，找到MCP配置，添加以下内容：
+   ```json
+   {
+     "mcpServers": {
+       "gitlab-mcp": {
+         "command": "node",
+         "args": ["/Users/username/projects/gitlab-mcp/dist/index.js"],
+         "env": {
+           "GITLAB_HOST": "https://gitlab.com",
+           "GITLAB_TOKEN": "glpat-xxxxxxxxxxxxx"
+         }
+       }
+     }
+   }
+   ```
+
+4. **重启Cursor**
+   
+   保存配置后重启Cursor使配置生效。
+
+### 使用示例
+
+**完整工作流示例：**
+
+查看项目为gdesign/meta，mrid为10821的mr信息以及所有变更内容，按照mr生成规划生成文档，随后将该文档帮我更新到对应的mrid的描述下
+
+**在Cursor中的使用示例：**
+
+配置完成后，您可以在Cursor的聊天界面中使用以下命令：
+
+```
+请获取项目 company/awesome-project 中 MR #123 的详细信息
+```
+
+```
+请查看项目 company/awesome-project 中 MR #123 的文件变更，包含diff内容
+```
+
+```
+请获取项目 company/awesome-project 中 src/main.ts 文件的内容
+```
+
+```
+请列出项目 company/awesome-project 中所有正在进行的合并请求
+```
+
+```
+请更新项目 company/awesome-project 中 MR #123 的描述为: "## 功能更新\n\n- 添加用户认证\n- 修复登录问题"
+```
+
+
 ## 🔧 MCP工具详解
 
 ### 1. get_merge_request
@@ -198,63 +266,38 @@
 }
 ```
 
-## 🖥️ 在Cursor中使用
+### 5. update_merge_request_description
 
-### 配置步骤
+更新指定合并请求的描述信息，支持Markdown格式。
 
-1. **构建项目**
-   ```bash
-   pnpm run build
-   ```
+**参数:**
+- `projectPath` (string): 项目路径，格式: `owner/repo`
+- `mergeRequestIid` (number): 合并请求的内部ID
+- `description` (string): 新的描述内容，支持Markdown格式
 
-2. **获取绝对路径**
-   ```bash
-   pwd
-   # 输出类似: /Users/username/projects/gitlab-mcp
-   ```
-
-3. **配置Cursor MCP设置**
-   
-   打开Cursor设置，找到MCP配置，添加以下内容：
-   ```json
-   {
-     "mcpServers": {
-       "gitlab-mcp": {
-         "command": "node",
-         "args": ["/Users/username/projects/gitlab-mcp/dist/index.js"],
-         "env": {
-           "GITLAB_HOST": "https://gitlab.com",
-           "GITLAB_TOKEN": "glpat-xxxxxxxxxxxxx"
-         }
-       }
-     }
-   }
-   ```
-
-4. **重启Cursor**
-   
-   保存配置后重启Cursor使配置生效。
-
-### 使用示例
-
-查看项目为gdesign/meta ，mrid为10821的mr信息以及所有变更内容，按照mr生成规划生成文档，随后将该文档帮我更新到对应的mrid的描述下
-
-配置完成后，您可以在Cursor的聊天界面中使用以下命令：
-
-```
-请获取项目 company/awesome-project 中 MR #123 的详细信息
-```
-
-```
-请查看项目 company/awesome-project 中 MR #123 的文件变更，包含diff内容
-```
-
-```
-请获取项目 company/awesome-project 中 src/main.ts 文件的内容
-```
-
-```
-请列出项目 company/awesome-project 中所有正在进行的合并请求
+**返回示例:**
+```json
+{
+  "success": true,
+  "message": "合并请求描述更新成功",
+  "merge_request": {
+    "id": 123456,
+    "iid": 42,
+    "title": "feat: 添加用户认证功能",
+    "description": "# 功能描述\n\n## 主要变更\n- 添加JWT认证机制\n- 实现用户权限管理\n- 增加登录/注销功能\n\n## 测试说明\n- 单元测试覆盖率: 95%\n- 集成测试通过\n\n## 部署注意事项\n- 需要更新环境变量配置\n- 数据库迁移已包含",
+    "state": "opened",
+    "author": {
+      "username": "developer",
+      "name": "张三"
+    },
+    "source_branch": "feature/user-auth",
+    "target_branch": "main",
+    "created_at": "2024-01-15T10:30:00.000Z",
+    "updated_at": "2024-01-16T14:45:00.000Z",
+    "web_url": "https://gitlab.com/company/project/-/merge_requests/42",
+    "description_length": 186
+  }
+}
 ```
 
 ## 🔑 GitLab Token配置
@@ -270,6 +313,7 @@
      - ✅ `api` - 访问GitLab API
      - ✅ `read_user` - 读取用户信息
      - ✅ `read_repository` - 读取仓库内容
+     - ✅ `write_repository` - 写入仓库内容（更新MR描述需要）
 4. **点击 "Create personal access token"**
 5. **复制令牌** (只显示一次，请妥善保存)
 
@@ -280,30 +324,9 @@
 | `api` | 访问GitLab REST API | ✅ |
 | `read_user` | 获取用户信息和验证连接 | ✅ |
 | `read_repository` | 读取项目文件和MR信息 | ✅ |
+| `write_repository` | 更新MR描述等写入操作 | ✅ |
 | `read_merge_request` | 访问MR详细信息 | 自动包含在api中 |
 
-## 📁 项目结构
-
-```
-gitlab-mcp/
-├── src/                          # 源代码目录
-│   ├── index.ts                  # 主入口文件，MCP服务器实现
-│   ├── config/
-│   │   └── types.ts              # TypeScript类型定义
-│   └── gitlab/
-│       └── client.ts             # GitLab API客户端封装
-├── dist/                         # 构建输出目录
-│   ├── index.js                  # 编译后的可执行文件
-│   └── ...                       # 其他编译输出
-├── package.json                  # 项目配置和依赖
-├── tsconfig.json                 # TypeScript配置
-├── pnpm-lock.yaml               # 依赖锁定文件
-├── .gitignore                   # Git忽略规则
-├── env.example                  # 环境变量模板
-├── cursor-mcp-config.json       # Cursor配置示例
-├── USAGE.md                     # 使用示例文档
-└── README.md                    # 项目说明文档
-```
 
 ## 🛠️ 开发指南
 
