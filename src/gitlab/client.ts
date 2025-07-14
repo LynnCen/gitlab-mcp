@@ -1,8 +1,8 @@
 import { Gitlab } from '@gitbeaker/rest';
-import { GitLabConfig, GitLabUser, GitLabProject, GitLabMergeRequest, GitLabFile } from '../config/types.js';
+import { GitLabConfig} from '../config/types.js';
 
 export class GitLabClient {
-  private gitlab: any;
+  private gitlab: InstanceType<typeof Gitlab>;
   private config: GitLabConfig;
 
   constructor(config: GitLabConfig) {
@@ -10,13 +10,12 @@ export class GitLabClient {
     this.gitlab = new Gitlab({
       host: config.host,
       token: config.token,
-      queryTimeout: config.timeout || 30000,
     });
   }
 
-  async testConnection(): Promise<{ success: boolean; user?: GitLabUser; error?: string }> {
+  async testConnection(): Promise<{ success: boolean; user?: any; error?: string }> {
     try {
-      const user = await this.gitlab.Users.current();
+      const user = await this.getCurrentUser();
       return { success: true, user };
     } catch (error) {
       return {
@@ -26,34 +25,70 @@ export class GitLabClient {
     }
   }
 
-  async getProject(projectPath: string): Promise<GitLabProject> {
-    return await this.withRetry(() => this.gitlab.Projects.show(projectPath));
+  /**
+   * 获取当前认证用户的详细信息
+   * 对应 GitLab API: GET /user
+   */
+  async getCurrentUser(): Promise<any> {
+    return await this.withRetry(async () => {
+      // 使用GitLab API的 /user 端点获取当前用户信息
+      const response = await this.gitlab.requester.get('user');
+      return response;
+    });
   }
 
-  async getMergeRequest(projectId: string | number, mrIid: number): Promise<GitLabMergeRequest> {
+  async getProject(projectId: string | number) {
+    return await this.withRetry(() => this.gitlab.Projects.show(projectId));
+  }
+
+  async getMergeRequest(projectId: string | number, mrIid: number) {
     return await this.withRetry(() => this.gitlab.MergeRequests.show(projectId, mrIid));
   }
 
   async getMergeRequestChanges(projectId: string | number, mrIid: number): Promise<any> {
-    return await this.withRetry(() => this.gitlab.MergeRequests.changes(projectId, mrIid));
+    return await this.withRetry(() => this.gitlab.MergeRequests.show(projectId, mrIid, { 
+      renderHtml: false,
+      includeDivergedCommitsCount: true,
+      includeRebaseInProgress: true
+    }));
+  }
+
+  /**
+   * 更新合并请求的描述信息
+   * 对应 GitLab API: PUT /projects/:id/merge_requests/:merge_request_iid
+   * @param projectId 项目ID或路径
+   * @param mrIid 合并请求的内部ID
+   * @param description 新的描述内容（支持Markdown格式）
+   * @returns 更新后的合并请求信息
+   */
+  async updateMergeRequestDescription(
+    projectId: string | number, 
+    mrIid: number, 
+    description: string
+  ): Promise<any> {
+    return await this.withRetry(() => 
+      this.gitlab.MergeRequests.edit(projectId, mrIid, {
+        description: description
+      })
+    );
   }
 
   async getFileContent(
     projectId: string | number,
     filePath: string,
     ref: string = 'main'
-  ): Promise<GitLabFile> {
+  ) {
     return await this.withRetry(() => this.gitlab.RepositoryFiles.show(projectId, filePath, ref));
   }
 
   async getMergeRequests(
     projectId: string | number,
     options: {
-      state?: 'opened' | 'closed' | 'merged' | 'all';
+      state?: 'opened' | 'closed' | 'locked' | 'merged';
       per_page?: number;
       page?: number;
     } = {}
-  ): Promise<GitLabMergeRequest[]> {
+  ) {
     return await this.withRetry(() => this.gitlab.MergeRequests.all({
       projectId,
       ...options,
@@ -73,7 +108,7 @@ export class GitLabClient {
           throw lastError;
         }
 
-        // 等待时间递增：1s, 2s, 4s
+        // Exponential backoff: 1s, 2s, 4s
         const delay = Math.pow(2, i) * 1000;
         await new Promise(resolve => setTimeout(resolve, delay));
       }

@@ -192,7 +192,7 @@ async function createServer(): Promise<McpServer> {
     async ({ projectPath, state = "opened", perPage = 20 }) => {
       const project = await gitlabClient.getProject(projectPath);
       const mrs = await gitlabClient.getMergeRequests(project.id, {
-        state,
+        state: state as 'opened' | 'closed' | 'locked' | 'merged',
         per_page: perPage
       });
       
@@ -214,6 +214,49 @@ async function createServer(): Promise<McpServer> {
                 updated_at: mr.updated_at,
                 web_url: mr.web_url
               }))
+            }, null, 2)
+          }
+        ]
+      };
+    }
+  );
+
+  server.registerTool(
+    "update_merge_request_description",
+    {
+      title: "更新合并请求描述",
+      description: "更新指定合并请求的描述信息，支持Markdown格式",
+      inputSchema: {
+        projectPath: z.string().describe("项目路径，格式: owner/repo"),
+        mergeRequestIid: z.number().describe("合并请求的内部ID"),
+        description: z.string().describe("新的描述内容，支持Markdown格式")
+      }
+    },
+    async ({ projectPath, mergeRequestIid, description }) => {
+      const project = await gitlabClient.getProject(projectPath);
+      const updatedMr = await gitlabClient.updateMergeRequestDescription(project.id, mergeRequestIid, description);
+      
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              success: true,
+              message: "合并请求描述更新成功",
+              merge_request: {
+                id: updatedMr.id,
+                iid: updatedMr.iid,
+                title: updatedMr.title,
+                description: updatedMr.description,
+                state: updatedMr.state,
+                author: updatedMr.author,
+                source_branch: updatedMr.source_branch,
+                target_branch: updatedMr.target_branch,
+                created_at: updatedMr.created_at,
+                updated_at: updatedMr.updated_at,
+                web_url: updatedMr.web_url,
+                description_length: updatedMr.description ? updatedMr.description.length : 0
+              }
             }, null, 2)
           }
         ]
