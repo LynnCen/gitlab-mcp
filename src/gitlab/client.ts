@@ -1,4 +1,4 @@
-import { Gitlab } from '@gitbeaker/node';
+import { Gitlab } from '@gitbeaker/rest';
 import { GitLabConfig, GitLabUser, GitLabProject, GitLabMergeRequest, GitLabFile } from '../config/types.js';
 
 export class GitLabClient {
@@ -10,7 +10,7 @@ export class GitLabClient {
     this.gitlab = new Gitlab({
       host: config.host,
       token: config.token,
-      requestTimeout: config.timeout || 30000,
+      queryTimeout: config.timeout || 30000,
     });
   }
 

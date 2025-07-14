@@ -342,7 +342,7 @@ pnpm start
 - **运行时**: Node.js 18+
 - **语言**: TypeScript 5.3+
 - **MCP SDK**: @modelcontextprotocol/sdk
-- **GitLab API**: @gitbeaker/node
+- **GitLab API**: @gitbeaker/rest
 - **验证**: Zod
 - **构建**: TypeScript Compiler
 
@@ -351,8 +351,10 @@ pnpm start
 ### 常见问题
 
 #### 1. 连接失败
+
 **症状**: "GitLab连接测试失败"
 **解决方案**:
+
 ```bash
 # 检查环境变量
 echo $GITLAB_HOST
@@ -363,22 +365,28 @@ curl -H "Authorization: Bearer $GITLAB_TOKEN" "$GITLAB_HOST/api/v4/user"
 ```
 
 #### 2. 权限不足
+
 **症状**: "403 Forbidden" 或 "权限错误"
 **解决方案**:
+
 - 确保token具有 `api`, `read_user`, `read_repository` 权限
 - 检查是否有访问目标项目的权限
 - 验证token是否已过期
 
 #### 3. 项目路径错误
+
 **症状**: "404 Project Not Found"
 **解决方案**:
+
 - 确保项目路径格式正确: `owner/project-name`
 - 检查项目是否存在且可访问
 - 对于群组项目，使用完整路径: `group/subgroup/project`
 
 #### 4. Cursor配置问题
+
 **症状**: Cursor中无法使用MCP工具
 **解决方案**:
+
 ```bash
 # 确保文件路径正确且可执行
 ls -la /path/to/gitlab-mcp/dist/index.js
@@ -421,7 +429,7 @@ node /path/to/gitlab-mcp/dist/index.js
 ## 🙏 致谢
 
 - [Model Context Protocol](https://modelcontextprotocol.io/) - 提供优秀的MCP协议和SDK
-- [@gitbeaker/node](https://github.com/jdalrymple/gitbeaker) - 强大的GitLab API客户端
+- [@gitbeaker/rest](https://github.com/jdalrymple/gitbeaker) - 强大的GitLab API客户端
 - [Zod](https://github.com/colinhacks/zod) - TypeScript优先的模式验证库
 
 ---
