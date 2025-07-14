@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 
+import { config } from "dotenv";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { GitLabClient } from "./gitlab/client.js";
 import { GitLabConfig } from "./config/types.js";
+
+// 加载环境变量
+config();
 
 // 配置架构
 const ConfigSchema = z.object({

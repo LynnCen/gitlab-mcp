@@ -27,6 +27,7 @@
   "dependencies": {
     "@gitbeaker/rest": "^43.0.0",
     "@modelcontextprotocol/sdk": "^1.15.1",
+    "dotenv": "^17.2.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
