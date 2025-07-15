@@ -104,9 +104,10 @@
      }
    }
    ```
+
 4. **配置cursor rules**
 
-```markdown
+```text
 ---
 description: 生成基于 GitLab MR 的规范化描述文档
 globs:
@@ -178,7 +179,6 @@ alwaysApply: false
 ## Pull Request 标题
 [简洁描述性标题]
 ```
-
 ## Input Variables
 
 - `{{raw_diff}}` - 原始的 diff 内容
@@ -190,9 +190,11 @@ alwaysApply: false
 
 ```
 
+```
+
 5. **重启Cursor**
    
-   保存配置后重启Cursor使配置生效。
+ 保存配置后重启Cursor使配置生效。
 
 ### 使用示例
 
