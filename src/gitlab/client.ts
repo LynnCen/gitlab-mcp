@@ -45,12 +45,28 @@ export class GitLabClient {
     return await this.withRetry(() => this.gitlab.MergeRequests.show(projectId, mrIid));
   }
 
+  /**
+   * 获取合并请求的变更信息
+   * 对应 GitLab API: GET /projects/:id/merge_requests/:merge_request_iid/changes
+   * @param projectId 项目ID或路径
+   * @param mrIid 合并请求的内部ID
+   * @returns 合并请求的变更信息
+   */
+
   async getMergeRequestChanges(projectId: string | number, mrIid: number): Promise<any> {
-    return await this.withRetry(() => this.gitlab.MergeRequests.show(projectId, mrIid, { 
-      renderHtml: false,
-      includeDivergedCommitsCount: true,
-      includeRebaseInProgress: true
-    }));
+    try {
+      const mr = await this.withRetry(() => 
+        this.gitlab.MergeRequests.showChanges(projectId, mrIid,{
+          accessRawDiffs: true
+        })
+      );
+      return mr;
+
+
+    } catch (error) {
+      console.error(`Error getting merge request changes for project ${projectId}, MR ${mrIid}:`, error);
+      throw new Error(`Failed to get merge request changes: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   /**
