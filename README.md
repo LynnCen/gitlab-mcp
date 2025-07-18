@@ -68,7 +68,7 @@
 5. **测试服务器**
    ```bash
    # 测试连接
-   node dist/index.js
+   node dist/src/index.js
    ```
    如果看到"✅ 已连接到GitLab"消息，说明配置成功。
 
@@ -90,17 +90,21 @@
 3. **配置Cursor MCP设置**
 
    打开Cursor设置，找到MCP配置，添加以下内容：
+
+   >注意：command的值需要是绝对路径，args的值需要是相对路径，env的值需要是环境变量
+
    ```json
    {
      "mcpServers": {
        "gitlab-mcp": {
-         "command": "node",
-         "args": ["/Users/username/projects/gitlab-mcp/dist/index.js"],
-         "env": {
-           "GITLAB_HOST": "https://gitlab.com",
-           "GITLAB_TOKEN": "glpat-xxxxxxxxxxxxx"
-         }
+       "type": "stdio",
+       "command": "node",
+       "args": ["/Users/lynncen/personal/code/gitlab-mcp/dist/src/index.js"],
+       "env": {
+        "GITLAB_TOKEN": "xxxxx",
+        "GITLAB_HOST": "xxxxxx"
        }
+    }
      }
    }
    ```
@@ -417,10 +421,10 @@ curl -H "Authorization: Bearer $GITLAB_TOKEN" "$GITLAB_HOST/api/v4/user"
 
 ```bash
 # 确保文件路径正确且可执行
-ls -la /path/to/gitlab-mcp/dist/index.js
+ls -la /path/to/gitlab-mcp/dist/src/index.js
 
 # 测试配置
-node /path/to/gitlab-mcp/dist/index.js
+node /path/to/gitlab-mcp/dist/src/index.js
 
 # 重启Cursor
 ```
@@ -428,7 +432,7 @@ node /path/to/gitlab-mcp/dist/index.js
 ### 调试技巧
 
 1. **查看日志**: 服务器会在stderr输出日志信息
-2. **测试连接**: 使用`node dist/index.js`直接测试
+2. **测试连接**: 使用`node dist/src/index.js`直接测试
 3. **验证环境**: 确保所有环境变量正确设置
 4. **检查权限**: 使用GitLab Web界面验证token权限
 

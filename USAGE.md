@@ -25,7 +25,7 @@ export GITLAB_TOKEN="your-gitlab-token"
   "mcpServers": {
     "gitlab-mcp": {
       "command": "node",
-      "args": ["/absolute/path/to/gitlab-mcp/dist/index.js"],
+      "args": ["/absolute/path/to/gitlab-mcp/dist/src/index.js"],
       "env": {
         "GITLAB_HOST": "https://gitlab.com",
         "GITLAB_TOKEN": "your-gitlab-token"

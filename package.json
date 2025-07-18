@@ -2,15 +2,15 @@
   "name": "gitlab-mcp-server",
   "version": "1.1.0",
   "description": "标准的GitLab MCP服务器，支持stdio传输和配置化的GitLab操作",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "type": "module",
   "bin": {
-    "gitlab-mcp": "dist/index.js"
+    "gitlab-mcp": "dist/src/index.js"
   },
   "scripts": {
-    "build": "tsc && chmod +x dist/index.js",
+    "build": "tsc && chmod +x dist/src/index.js",
     "dev": "tsc --watch",
-    "start": "node dist/index.js",
+    "start": "node dist/src/index.js",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build",
     "test": "tsx tests/integration/mr-changes.test.ts",
