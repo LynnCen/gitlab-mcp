@@ -57,4 +57,73 @@ export interface GitLabFile {
   blob_id: string;
   commit_id: string;
   last_commit_id: string;
+}
+
+// AI代码审查相关类型定义
+export interface AICodeReviewConfig {
+  enabled: boolean;
+  llmProvider: 'openai' | 'claude' | 'gemini' | 'local';
+  apiKey?: string;
+  model: string;
+  temperature: number;
+  maxTokens: number;
+  autoComment: boolean;
+  reviewDepth: 'quick' | 'standard' | 'thorough';
+}
+
+export interface CodeReviewIssue {
+  line_number?: number;
+  severity: 'critical' | 'warning' | 'suggestion';
+  category: string;
+  title: string;
+  description: string;
+  suggestion: string;
+  auto_fixable: boolean;
+  rule_source: string;
+}
+
+export interface AICodeReviewResult {
+  file_path: string;
+  overall_score: number;
+  issues: CodeReviewIssue[];
+  suggestions: string[];
+  compliance_status: 'PASS' | 'WARNING' | 'CRITICAL';
+}
+
+export interface CodeReviewRules {
+  focus_areas: string[];
+  specific_rules: string[];
+  ignore_patterns: string[];
+  severity_mapping: {
+    [rule: string]: 'critical' | 'warning' | 'suggestion';
+  };
+}
+
+export interface FileFilterConfig {
+  includedExtensions: string[];
+  excludePatterns: RegExp[];
+  maxFileSize: number;
+  maxDiffLines: number;
+}
+
+export interface CodeReviewReport {
+  summary: {
+    files_reviewed: number;
+    total_issues: number;
+    critical_issues: number;
+    warnings: number;
+    suggestions: number;
+    average_score: number;
+    overall_status: 'PASS' | 'WARNING' | 'CRITICAL';
+  };
+  recommendations: string[];
+  review_metadata: {
+    reviewed_by: string;
+    review_time: string;
+    mr_info: {
+      title: string;
+      author: string;
+      changes_count: number;
+    };
+  };
 } 

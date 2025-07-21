@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { GitLabClient } from "../gitlab/client.js";
 import { GitLabConfig } from "../config/types.js";
-import { registerMergeRequestTools, registerFileOperationTools } from "./tools/index.js";
+import { registerMergeRequestTools, registerFileOperationTools, registerAICodeReviewTools } from "./tools/index.js";
 
 export class GitLabMcpServer {
   private server: McpServer;
@@ -48,6 +48,9 @@ export class GitLabMcpServer {
     
     // 注册文件操作相关工具
     registerFileOperationTools(this.server, this.gitlabClient);
+
+    // 注册AI代码审查工具
+    registerAICodeReviewTools(this.server, this.gitlabClient);
   }
 
   /**
