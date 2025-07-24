@@ -8,7 +8,7 @@
     "gitlab-mcp": "dist/src/index.js"
   },
   "scripts": {
-    "build": "tsc && chmod +x dist/src/index.js",
+    "build": "npm run clean && tsc && chmod +x dist/src/index.js",
     "dev": "tsc --watch",
     "start": "node dist/src/index.js",
     "clean": "rm -rf dist",

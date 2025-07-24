@@ -109,12 +109,63 @@ const FILE_FILTER_CONFIG: FileFilterConfig = {
 };
 
 /**
+ * 差异分析结果
+ */
+interface DiffAnalysis {
+  newLines: Array<{lineNumber: number, content: string}>;
+  deletedLines: Array<{lineNumber: number, content: string}>;
+  contextLines: Array<{lineNumber: number, content: string}>;
+}
+
+/**
+ * 评论分级策略
+ */
+class CommentPushStrategy {
+  static determineCommentType(issue: CodeReviewIssue, lineNumber: number | null): 'inline' | 'file' | 'summary' {
+    // Critical问题且有精确行号 -> 行内评论
+    if (issue.severity === 'critical' && lineNumber) {
+      return 'inline';
+    }
+    
+    // Warning问题且有行号 -> 行内评论
+    if (issue.severity === 'warning' && lineNumber) {
+      return 'inline';
+    }
+    
+    // 其他问题 -> 文件级评论
+    if (lineNumber || issue.severity === 'warning') {
+      return 'file';
+    }
+    
+    // 建议类问题 -> 汇总评论
+    return 'summary';
+  }
+  
+  static formatInlineComment(issue: CodeReviewIssue, filePath: string): string {
+    const severityEmoji = {
+      'critical': '🚨',
+      'warning': '⚠️', 
+      'suggestion': '💡'
+    };
+    
+    return `${severityEmoji[issue.severity]} **${issue.title}**
+
+${issue.description}
+
+**💡 建议**: ${issue.suggestion}
+
+---
+*${issue.category} | ${issue.rule_source}*`;
+  }
+}
+
+/**
  * 注册AI代码审查相关的工具
  */
 export function registerAICodeReviewTools(server: McpServer, gitlabClient: GitLabClient): void {
   
   // 获取文件特定的代码审查规则
-  server.tool(
+  server.registerTool(
     "get_file_code_review_rules",
     {
       title: "获取文件代码审查规则",
@@ -150,24 +201,21 @@ export function registerAICodeReviewTools(server: McpServer, gitlabClient: GitLa
     }
   );
 
-  // AI代码审查主工具
-  server.tool(
-    "ai_code_review",
+  // 分析MR变更并提供差异信息
+  server.registerTool(
+    "analyze_mr_changes",
     {
-      title: "AI代码审查",
-      description: "对指定的合并请求进行智能代码审查，基于最佳实践和规则引擎",
+      title: "分析MR变更",
+      description: "分析合并请求的文件变更和差异信息，为代码审查提供基础数据",
       inputSchema: {
         projectPath: z.string().describe("项目路径，格式: owner/repo"),
         mergeRequestIid: z.number().describe("合并请求的内部ID"),
-        autoComment: z.boolean().optional().default(false).describe("是否自动添加审查评论到MR"),
-        reviewDepth: z.enum(["quick", "standard", "thorough"]).optional().default("standard").describe("审查深度"),
-        focusFiles: z.array(z.string()).optional().describe("重点审查的文件列表，留空则审查所有相关文件"),
-        commentStyle: z.enum(["detailed", "summary", "minimal"]).optional().default("detailed").describe("评论风格")
+        focusFiles: z.array(z.string()).optional().describe("重点关注的文件列表")
       }
     },
-    async ({ projectPath, mergeRequestIid, autoComment = false, reviewDepth = "standard", focusFiles, commentStyle = "detailed" }) => {
+    async ({ projectPath, mergeRequestIid, focusFiles }) => {
       try {
-        console.log(`🔍 开始AI代码审查: ${projectPath}#${mergeRequestIid}`);
+        console.log(`🔍 开始分析MR变更: ${projectPath}#${mergeRequestIid}`);
         
         // 1. 获取MR基本信息和变更
         const project = await gitlabClient.getProject(projectPath);
@@ -181,40 +229,18 @@ export function registerAICodeReviewTools(server: McpServer, gitlabClient: GitLa
         const filteredChanges = filterReviewableChanges(changes.changes, focusFiles);
         console.log(`📋 过滤后需要审查的文件: ${filteredChanges.length}个`);
         
-        if (filteredChanges.length === 0) {
+        // 3. 分析每个文件的差异
+        const fileAnalysis = filteredChanges.map(change => {
+          const diffAnalysis = change.diff ? analyzeDiffLines(change.diff) : null;
           return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify({
-                  message: "没有找到需要审查的文件",
-                  total_changes: changes.changes.length,
-                  filtered_files: filteredChanges.map(c => c.new_path),
-                  skipped_reason: "所有文件都被过滤规则排除或不在支持的文件类型范围内"
-                }, null, 2)
-              }
-            ]
+            file_path: change.new_path,
+            change_type: change.new_file ? 'new' : change.deleted_file ? 'deleted' : 'modified',
+            extension: getFileExtension(change.new_path),
+            diff_lines: change.diff ? change.diff.split('\n').length : 0,
+            diff_analysis: diffAnalysis,
+            raw_diff: change.diff
           };
-        }
-        
-        // 3. 进行AI审查
-        const reviewResults = await performBatchAIReview(filteredChanges, reviewDepth);
-        
-        // 4. 生成审查报告
-        const reviewReport = generateReviewReport(reviewResults, mr);
-        
-        // 5. 如果启用自动评论，推送到GitLab
-        let commentResult = null;
-        if (autoComment && reviewResults.length > 0) {
-          commentResult = await pushReviewCommentsToGitLab(
-            gitlabClient, 
-            project.id, 
-            mergeRequestIid, 
-            reviewResults, 
-            reviewReport,
-            commentStyle
-          );
-        }
+        });
         
         return {
           content: [
@@ -228,75 +254,289 @@ export function registerAICodeReviewTools(server: McpServer, gitlabClient: GitLa
                   target_branch: mr.target_branch,
                   web_url: mr.web_url
                 },
-                review_summary: reviewReport,
-                detailed_results: reviewResults,
-                auto_commented: autoComment,
-                comment_result: commentResult,
-                reviewed_at: new Date().toISOString(),
-                review_settings: {
-                  depth: reviewDepth,
-                  focus_files: focusFiles,
-                  comment_style: commentStyle
-                }
+                analysis_summary: {
+                  total_files: changes.changes.length,
+                  reviewable_files: filteredChanges.length,
+                  excluded_files: changes.changes.length - filteredChanges.length
+                },
+                file_analysis: fileAnalysis,
+                analyzed_at: new Date().toISOString()
               }, null, 2)
             }
           ]
         };
         
       } catch (error) {
-        console.error('❌ AI代码审查失败:', error);
-        throw new Error(`AI代码审查失败: ${error instanceof Error ? error.message : String(error)}`);
+        console.error('❌ MR变更分析失败:', error);
+        throw new Error(`MR变更分析失败: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   );
-  
-  // 手动推送审查评论
-  server.tool(
-    "push_review_comments",
+
+  // 推送代码审查评论（由cursor传入评论内容）
+  server.registerTool(
+    "push_code_review_comments",
     {
-      title: "推送审查评论",
-      description: "将代码审查结果手动推送到GitLab MR评论",
+      title: "推送代码审查评论",
+      description: "将cursor生成的代码审查评论推送到GitLab MR，支持行内评论和文件级评论",
       inputSchema: {
         projectPath: z.string().describe("项目路径，格式: owner/repo"),
         mergeRequestIid: z.number().describe("合并请求的内部ID"),
-        reviewResults: z.string().describe("审查结果JSON字符串"),
-        reviewReport: z.string().optional().describe("审查报告JSON字符串"),
+        reviewComments: z.array(z.object({
+          filePath: z.string().describe("文件路径"),
+          lineNumber: z.number().optional().describe("行号（可选，用于行内评论）"),
+          severity: z.enum(["critical", "warning", "suggestion"]).describe("问题严重级别"),
+          title: z.string().describe("问题标题"),
+          description: z.string().describe("问题描述"),
+          suggestion: z.string().describe("修改建议"),
+          category: z.string().optional().default("代码质量").describe("问题分类"),
+          autoFixable: z.boolean().optional().default(false).describe("是否可自动修复")
+        })).describe("代码审查评论列表"),
+        summaryComment: z.string().optional().describe("总体审查评论（可选）"),
         commentStyle: z.enum(["detailed", "summary", "minimal"]).optional().default("detailed").describe("评论风格")
       }
     },
-    async ({ projectPath, mergeRequestIid, reviewResults, reviewReport, commentStyle = "detailed" }) => {
+    async ({ projectPath, mergeRequestIid, reviewComments, summaryComment, commentStyle = "detailed" }) => {
       try {
+        console.log(`🚀 开始推送代码审查评论: ${projectPath}#${mergeRequestIid}`);
+        console.log(`📝 评论数量: ${reviewComments.length}个`);
+        
         const project = await gitlabClient.getProject(projectPath);
         
-        // 解析JSON字符串
-        const parsedResults: AICodeReviewResult[] = JSON.parse(reviewResults);
-        const parsedReport = reviewReport ? JSON.parse(reviewReport) : null;
-        
-        const pushResult = await pushReviewCommentsToGitLab(
-          gitlabClient, 
-          project.id, 
-          mergeRequestIid, 
-          parsedResults, 
-          parsedReport,
-          commentStyle
+        // 1. 添加总体审查评论（如果提供）
+        let summaryResult = null;
+        if (summaryComment) {
+          try {
+            summaryResult = await gitlabClient.addMergeRequestNote(
+              project.id, 
+              mergeRequestIid, 
+              summaryComment
+            );
+            console.log('✅ 总体审查评论已添加');
+          } catch (error) {
+            console.warn('⚠️  添加总体审查评论失败:', error);
+          }
+        }
+
+        // 2. 构建精确的评论请求
+        const commentRequests = reviewComments.map(comment => ({
+          filePath: comment.filePath,
+          lineNumber: comment.lineNumber,
+          body: CommentPushStrategy.formatInlineComment({
+            line_number: comment.lineNumber,
+            severity: comment.severity,
+            category: comment.category,
+            title: comment.title,
+            description: comment.description,
+            suggestion: comment.suggestion,
+            auto_fixable: comment.autoFixable,
+            rule_source: 'Cursor AI Review'
+          }, comment.filePath),
+          severity: comment.severity
+        }));
+
+        // 3. 批量创建评论
+        const commentResults = await gitlabClient.batchCreateReviewComments(
+          project.id,
+          mergeRequestIid,
+          commentRequests
         );
-        
+
+        const successCount = commentResults.filter(r => r.success).length;
+        const failureCount = commentResults.filter(r => !r.success).length;
+        const inlineCount = commentResults.filter(r => r.success && r.lineNumber).length;
+        const fileCount = commentResults.filter(r => r.success && !r.lineNumber).length;
+
+        console.log(`✅ 评论推送完成: ${successCount} 成功, ${failureCount} 失败`);
+        console.log(`📍 行内评论: ${inlineCount}个, 文件评论: ${fileCount}个`);
+
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(pushResult, null, 2)
+              text: JSON.stringify({
+                success: true,
+                summary: {
+                  total_comments: reviewComments.length,
+                  successful_comments: successCount,
+                  failed_comments: failureCount,
+                  inline_comments: inlineCount,
+                  file_comments: fileCount,
+                  summary_comment_added: !!summaryResult
+                },
+                summary_comment: summaryResult ? { id: summaryResult.id } : null,
+                comment_results: commentResults,
+                message: `已成功推送 ${successCount} 条代码审查评论到 MR #${mergeRequestIid}`,
+                pushed_at: new Date().toISOString()
+              }, null, 2)
             }
           ]
         };
+        
       } catch (error) {
+        console.error('❌ 推送评论失败:', error);
         throw new Error(`推送评论失败: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   );
 
+  // 调试工具：检查MR的SHA信息
+  server.registerTool(
+    "debug_mr_sha_info",
+    {
+      title: "调试MR SHA信息",
+      description: "检查合并请求的版本信息、diff_refs和commits，用于调试行内评论问题",
+      inputSchema: {
+        projectPath: z.string().describe("项目路径，格式: owner/repo"),
+        mergeRequestIid: z.number().describe("合并请求的内部ID")
+      }
+    },
+    async ({ projectPath, mergeRequestIid }) => {
+      try {
+        console.log(`🔍 调试MR SHA信息: ${projectPath}#${mergeRequestIid}`);
+        
+        const project = await gitlabClient.getProject(projectPath);
+        const debugInfo: any = {
+          project_id: project.id,
+          mr_iid: mergeRequestIid,
+          timestamp: new Date().toISOString()
+        };
+
+        // 1. 尝试获取版本信息
+        try {
+          const versions = await (gitlabClient as any).getMergeRequestVersions(project.id, mergeRequestIid);
+          debugInfo.versions = {
+            success: true,
+            count: versions?.length || 0,
+            data: versions,
+            latest_version: versions?.[0] || null
+          };
+        } catch (error) {
+          debugInfo.versions = {
+            success: false,
+            error: error instanceof Error ? error.message : String(error)
+          };
+        }
+
+        // 2. 获取MR基本信息
+        try {
+          const mr = await gitlabClient.getMergeRequest(project.id, mergeRequestIid);
+          debugInfo.merge_request = {
+            success: true,
+            sha: (mr as any).sha,
+            diff_refs: (mr as any).diff_refs,
+            source_branch: (mr as any).source_branch,
+            target_branch: (mr as any).target_branch,
+            state: (mr as any).state
+          };
+        } catch (error) {
+          debugInfo.merge_request = {
+            success: false,
+            error: error instanceof Error ? error.message : String(error)
+          };
+        }
+
+        // 3. 获取commits信息
+        try {
+          const commits = await gitlabClient.getMergeRequestCommits(project.id, mergeRequestIid);
+          debugInfo.commits = {
+            success: true,
+            count: commits?.length || 0,
+            first_commit: commits?.[0] ? {
+              id: commits[0].id,
+              short_id: commits[0].short_id,
+              title: commits[0].title
+            } : null,
+            last_commit: commits?.length > 0 ? {
+              id: commits[commits.length - 1].id,
+              short_id: commits[commits.length - 1].short_id,
+              title: commits[commits.length - 1].title
+            } : null
+          };
+        } catch (error) {
+          debugInfo.commits = {
+            success: false,
+            error: error instanceof Error ? error.message : String(error)
+          };
+        }
+
+        // 4. 分析可用的SHA来源
+        const shaAnalysis: any = {
+          available_sources: [],
+          recommended_method: null
+        };
+
+        if (debugInfo.versions.success && debugInfo.versions.latest_version) {
+          const v = debugInfo.versions.latest_version;
+          const base_sha = v.base_commit_sha || v.base_sha;
+          const start_sha = v.start_commit_sha || v.start_sha;
+          const head_sha = v.head_commit_sha || v.head_sha;
+          
+          if (base_sha && start_sha && head_sha) {
+            shaAnalysis.available_sources.push({
+              method: 'versions_api',
+              priority: 1,
+              base_sha: base_sha?.substring(0, 8),
+              start_sha: start_sha?.substring(0, 8),
+              head_sha: head_sha?.substring(0, 8),
+              complete: true
+            });
+            shaAnalysis.recommended_method = 'versions_api';
+          }
+        }
+
+        if (debugInfo.merge_request.success && debugInfo.merge_request.diff_refs) {
+          const dr = debugInfo.merge_request.diff_refs;
+          if (dr.base_sha && dr.start_sha && dr.head_sha) {
+            shaAnalysis.available_sources.push({
+              method: 'diff_refs',
+              priority: 2,
+              base_sha: dr.base_sha?.substring(0, 8),
+              start_sha: dr.start_sha?.substring(0, 8),
+              head_sha: dr.head_sha?.substring(0, 8),
+              complete: true
+            });
+            if (!shaAnalysis.recommended_method) {
+              shaAnalysis.recommended_method = 'diff_refs';
+            }
+          }
+        }
+
+        if (debugInfo.commits.success && debugInfo.commits.count > 0) {
+          shaAnalysis.available_sources.push({
+            method: 'commits',
+            priority: 3,
+            base_sha: debugInfo.commits.first_commit?.id?.substring(0, 8),
+            start_sha: debugInfo.commits.first_commit?.id?.substring(0, 8),
+            head_sha: debugInfo.commits.last_commit?.id?.substring(0, 8),
+            complete: !!(debugInfo.commits.first_commit && debugInfo.commits.last_commit),
+            note: '备用方案，可能不够准确'
+          });
+          if (!shaAnalysis.recommended_method) {
+            shaAnalysis.recommended_method = 'commits';
+          }
+        }
+
+        debugInfo.sha_analysis = shaAnalysis;
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(debugInfo, null, 2)
+            }
+          ]
+        };
+        
+      } catch (error) {
+        console.error('❌ 调试信息获取失败:', error);
+        throw new Error(`调试信息获取失败: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+  );
+
   // 批量文件过滤工具
-  server.tool(
+  server.registerTool(
     "filter_reviewable_files",
     {
       title: "过滤可审查文件",
@@ -342,6 +582,42 @@ export function registerAICodeReviewTools(server: McpServer, gitlabClient: GitLa
       }
     }
   );
+}
+
+/**
+ * 分析diff并提取准确的行号信息
+ */
+function analyzeDiffLines(diff: string): DiffAnalysis {
+  const lines = diff.split('\n');
+  const newLines = [];
+  const deletedLines = [];
+  const contextLines = [];
+  
+  let newLineNumber = 0;
+  let oldLineNumber = 0;
+  
+  for (const line of lines) {
+    if (line.startsWith('@@')) {
+      // 解析行号范围 @@-oldStart,oldCount +newStart,newCount@@
+      const match = line.match(/@@ -(\d+),?\d* \+(\d+),?\d* @@/);
+      if (match) {
+        oldLineNumber = parseInt(match[1]) - 1;
+        newLineNumber = parseInt(match[2]) - 1;
+      }
+    } else if (line.startsWith('+') && !line.startsWith('+++')) {
+      newLineNumber++;
+      newLines.push({ lineNumber: newLineNumber, content: line.substring(1) });
+    } else if (line.startsWith('-') && !line.startsWith('---')) {
+      oldLineNumber++;
+      deletedLines.push({ lineNumber: oldLineNumber, content: line.substring(1) });
+    } else if (line.startsWith(' ')) {
+      oldLineNumber++;
+      newLineNumber++;
+      contextLines.push({ lineNumber: newLineNumber, content: line.substring(1) });
+    }
+  }
+  
+  return { newLines, deletedLines, contextLines };
 }
 
 /**
@@ -448,368 +724,4 @@ function getExclusionReason(change: GitLabFileChange): string {
   }
   
   return '未知原因';
-}
-
-/**
- * 批量进行AI审查 (模拟实现)
- */
-async function performBatchAIReview(
-  changes: GitLabFileChange[], 
-  reviewDepth: string
-): Promise<AICodeReviewResult[]> {
-  const results: AICodeReviewResult[] = [];
-  
-  console.log(`🤖 开始进行批量AI审查，深度: ${reviewDepth}...`);
-  
-  for (const change of changes) {
-    try {
-      const extension = getFileExtension(change.new_path);
-      const rules = getCodeReviewRules(extension);
-      
-      // 这里应该调用实际的LLM API，目前使用模拟实现
-      const result = await simulateAIReview(change, rules, reviewDepth);
-      
-      results.push({
-        file_path: change.new_path,
-        overall_score: result.overall_score,
-        issues: result.issues,
-        suggestions: result.suggestions,
-        compliance_status: result.compliance_status
-      });
-      
-      console.log(`✅ 审查完成: ${change.new_path} (评分: ${result.overall_score})`);
-      
-    } catch (error) {
-      console.error(`❌ 审查文件 ${change.new_path} 失败:`, error);
-      // 继续处理其他文件
-    }
-  }
-  
-  return results;
-}
-
-/**
- * 模拟AI审查 (在实际使用中应该替换为真实的LLM调用)
- */
-async function simulateAIReview(
-  change: GitLabFileChange, 
-  rules: CodeReviewRules,
-  reviewDepth: string
-): Promise<{
-  overall_score: number;
-  issues: CodeReviewIssue[];
-  suggestions: string[];
-  compliance_status: 'PASS' | 'WARNING' | 'CRITICAL';
-}> {
-  // 模拟处理延迟
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  const mockIssues: CodeReviewIssue[] = [];
-  const mockSuggestions: string[] = [];
-  
-  // 根据文件类型和内容生成模拟问题
-  const extension = getFileExtension(change.new_path);
-  
-  if (extension === '.ts' || extension === '.js') {
-    if (change.diff?.includes('console.log')) {
-      mockIssues.push({
-        line_number: Math.floor(Math.random() * 50) + 1,
-        severity: 'warning',
-        category: '代码质量',
-        title: '包含调试语句',
-        description: '代码中包含console.log调试语句',
-        suggestion: '移除console.log语句或使用正式的日志框架',
-        auto_fixable: true,
-        rule_source: '代码清理最佳实践'
-      });
-    }
-    
-    if (change.diff?.includes('any')) {
-      mockIssues.push({
-        line_number: Math.floor(Math.random() * 50) + 1,
-        severity: 'warning',
-        category: '类型安全',
-        title: '使用了any类型',
-        description: '使用any类型会失去TypeScript的类型检查优势',
-        suggestion: '使用具体的类型定义或泛型来替代any',
-        auto_fixable: false,
-        rule_source: 'TypeScript最佳实践'
-      });
-    }
-  }
-  
-  if (extension === '.vue') {
-    mockSuggestions.push('建议使用Composition API来提高代码复用性');
-    mockSuggestions.push('考虑为组件添加必要的prop验证');
-  }
-  
-  // 根据审查深度调整问题数量
-  const issueMultiplier = reviewDepth === 'quick' ? 0.5 : reviewDepth === 'thorough' ? 1.5 : 1;
-  const finalIssueCount = Math.max(1, Math.floor(mockIssues.length * issueMultiplier));
-  
-  if (mockIssues.length === 0) {
-    mockSuggestions.push('代码质量良好，建议继续保持');
-    mockSuggestions.push('考虑添加更多的单元测试覆盖');
-  }
-  
-  const criticalCount = mockIssues.filter(i => i.severity === 'critical').length;
-  const warningCount = mockIssues.filter(i => i.severity === 'warning').length;
-  
-  const overall_score = Math.max(60, 100 - (criticalCount * 20) - (warningCount * 10) - (mockIssues.length * 2));
-  const compliance_status = criticalCount > 0 ? 'CRITICAL' : warningCount > 0 ? 'WARNING' : 'PASS';
-  
-  return {
-    overall_score,
-    issues: mockIssues.slice(0, finalIssueCount),
-    suggestions: mockSuggestions,
-    compliance_status
-  };
-}
-
-/**
- * 生成审查报告
- */
-function generateReviewReport(results: AICodeReviewResult[], mr: any): CodeReviewReport {
-  const totalIssues = results.reduce((sum, result) => sum + result.issues.length, 0);
-  const criticalIssues = results.reduce((sum, result) => 
-    sum + result.issues.filter(issue => issue.severity === 'critical').length, 0);
-  const warnings = results.reduce((sum, result) => 
-    sum + result.issues.filter(issue => issue.severity === 'warning').length, 0);
-  const suggestions = results.reduce((sum, result) => 
-    sum + result.issues.filter(issue => issue.severity === 'suggestion').length, 0);
-  
-  const averageScore = results.length > 0 
-    ? Math.round(results.reduce((sum, result) => sum + result.overall_score, 0) / results.length)
-    : 0;
-  
-  const overallStatus = criticalIssues > 0 ? 'CRITICAL' : 
-                       warnings > 0 ? 'WARNING' : 'PASS';
-  
-  const recommendations = generateOverallRecommendations(results, mr);
-  
-  return {
-    summary: {
-      files_reviewed: results.length,
-      total_issues: totalIssues,
-      critical_issues: criticalIssues,
-      warnings: warnings,
-      suggestions: suggestions,
-      average_score: averageScore,
-      overall_status: overallStatus
-    },
-    recommendations,
-    review_metadata: {
-      reviewed_by: 'AI Code Reviewer',
-      review_time: new Date().toISOString(),
-      mr_info: {
-        title: mr.title,
-        author: mr.author.username,
-        changes_count: results.length
-      }
-    }
-  };
-}
-
-/**
- * 生成总体建议
- */
-function generateOverallRecommendations(results: AICodeReviewResult[], mr: any): string[] {
-  const recommendations: string[] = [];
-  
-  const criticalCount = results.reduce((sum, r) => 
-    sum + r.issues.filter(i => i.severity === 'critical').length, 0);
-  const warningCount = results.reduce((sum, r) => 
-    sum + r.issues.filter(i => i.severity === 'warning').length, 0);
-  
-  if (criticalCount > 0) {
-    recommendations.push(`🚨 发现 ${criticalCount} 个严重问题，强烈建议在合并前修复`);
-  }
-  
-  if (warningCount > 3) {
-    recommendations.push(`⚠️  发现较多警告问题 (${warningCount}个)，建议优先处理`);
-  }
-  
-  if (results.length > 15) {
-    recommendations.push('📊 此MR涉及文件较多，建议考虑拆分为更小的MR便于审查和测试');
-  }
-  
-  const lowScoreFiles = results.filter(r => r.overall_score < 70);
-  if (lowScoreFiles.length > 0) {
-    recommendations.push(`📉 ${lowScoreFiles.length} 个文件质量评分较低(<70分)，需要重点关注`);
-  }
-  
-  // 基于文件类型的建议
-  const hasTestFiles = results.some(r => r.file_path.includes('.test.') || r.file_path.includes('.spec.'));
-  const hasSourceFiles = results.some(r => !r.file_path.includes('.test.') && !r.file_path.includes('.spec.'));
-  
-  if (hasSourceFiles && !hasTestFiles) {
-    recommendations.push('🧪 建议为新功能添加相应的单元测试');
-  }
-  
-  return recommendations;
-}
-
-/**
- * 推送审查评论到GitLab
- */
-async function pushReviewCommentsToGitLab(
-  gitlabClient: GitLabClient,
-  projectId: string | number,
-  mergeRequestIid: number,
-  reviewResults: AICodeReviewResult[],
-  reviewReport?: CodeReviewReport | null,
-  commentStyle: string = "detailed"
-): Promise<any> {
-  try {
-    console.log('🚀 开始推送审查评论到GitLab...');
-    
-    const comments = [];
-    
-    // 1. 添加总体审查报告评论
-    if (reviewReport) {
-      const summaryComment = generateSummaryComment(reviewReport, commentStyle);
-      try {
-        const summaryResult = await gitlabClient.addMergeRequestNote(projectId, mergeRequestIid, summaryComment);
-        comments.push({ type: 'summary', id: summaryResult.id });
-        console.log('✅ 总体报告评论已添加');
-      } catch (error) {
-        console.warn('⚠️  添加总体报告评论失败:', error);
-      }
-    }
-    
-    // 2. 为重要问题添加单独评论
-    let issueCommentCount = 0;
-    for (const result of reviewResults) {
-      const criticalIssues = result.issues.filter(issue => issue.severity === 'critical');
-      const warningIssues = result.issues.filter(issue => issue.severity === 'warning');
-      
-      // 只为critical和warning问题添加独立评论（避免太多spam）
-      const importantIssues = [...criticalIssues, ...warningIssues.slice(0, 2)]; // 最多2个warning
-      
-      for (const issue of importantIssues) {
-        const issueComment = generateIssueComment(issue, result.file_path);
-        try {
-          const commentResult = await gitlabClient.addMergeRequestNote(projectId, mergeRequestIid, issueComment);
-          comments.push({ 
-            type: 'issue', 
-            file: result.file_path, 
-            severity: issue.severity,
-            id: commentResult.id 
-          });
-          issueCommentCount++;
-        } catch (error) {
-          console.warn(`⚠️  无法添加问题评论 ${result.file_path}:`, error);
-        }
-      }
-    }
-    
-    console.log(`✅ 成功推送 ${comments.length} 条审查评论 (包含 ${issueCommentCount} 个问题评论)`);
-    
-    return {
-      success: true,
-      comments_added: comments.length,
-      issue_comments: issueCommentCount,
-      comments_details: comments,
-      message: `已成功将AI代码审查结果推送到MR #${mergeRequestIid}`
-    };
-    
-  } catch (error) {
-    console.error('❌ 推送评论失败:', error);
-    throw new Error(`推送评论失败: ${error instanceof Error ? error.message : String(error)}`);
-  }
-}
-
-/**
- * 生成总体评论
- */
-function generateSummaryComment(reviewReport: CodeReviewReport, style: string): string {
-  const { summary, recommendations } = reviewReport;
-  
-  if (style === "minimal") {
-    return `## 🤖 AI代码审查结果
-    
-**总体评分**: ${summary.average_score}/100 | **状态**: ${getStatusEmoji(summary.overall_status)} ${summary.overall_status}
-
-${summary.critical_issues > 0 ? `🚨 ${summary.critical_issues} 个严重问题` : ''}
-${summary.warnings > 0 ? `⚠️ ${summary.warnings} 个警告` : ''}
-${summary.suggestions > 0 ? `💡 ${summary.suggestions} 个建议` : ''}`;
-  }
-  
-  if (style === "summary") {
-    return `## 🤖 AI代码审查报告
-
-### 📊 审查概况
-- **文件数量**: ${summary.files_reviewed}个
-- **总体评分**: ${summary.average_score}/100
-- **审查状态**: ${getStatusEmoji(summary.overall_status)} ${summary.overall_status}
-
-### 🔍 问题统计
-- 🚨 严重问题: ${summary.critical_issues}个
-- ⚠️ 警告: ${summary.warnings}个  
-- 💡 建议: ${summary.suggestions}个
-
-${recommendations.length > 0 ? `\n### 📋 总体建议\n${recommendations.map((rec: string) => `- ${rec}`).join('\n')}` : ''}`;
-  }
-  
-  // detailed style
-  return `## 🤖 AI代码审查详细报告
-
-### 📊 审查概况
-- **审查文件**: ${summary.files_reviewed} 个
-- **总体评分**: ${summary.average_score}/100 ⭐
-- **审查状态**: ${getStatusEmoji(summary.overall_status)} **${summary.overall_status}**
-
-### 🔍 问题分析
-| 类型 | 数量 | 说明 |
-|------|------|------|
-| 🚨 严重问题 | ${summary.critical_issues} | 必须在合并前修复 |
-| ⚠️ 警告 | ${summary.warnings} | 建议尽快处理 |
-| 💡 建议 | ${summary.suggestions} | 优化建议 |
-
-### 📋 审查建议
-${recommendations.map((rec: string) => `- ${rec}`).join('\n')}
-
-### 🕒 审查信息
-- **审查时间**: ${new Date().toLocaleString('zh-CN')}
-- **审查工具**: AI Code Reviewer v1.0
-- **MR信息**: ${reviewReport.review_metadata.mr_info.title}
-
----
-> 这是AI自动生成的代码审查报告。如有疑问，请联系开发团队。`;
-}
-
-/**
- * 生成问题评论
- */
-function generateIssueComment(issue: CodeReviewIssue, filePath: string): string {
-  const severityEmoji = {
-    'critical': '🚨',
-    'warning': '⚠️',
-    'suggestion': '💡'
-  };
-  
-  return `### ${severityEmoji[issue.severity]} ${issue.title}
-
-**📁 文件**: \`${filePath}\`${issue.line_number ? ` (第${issue.line_number}行)` : ''}
-
-**📝 问题描述**: ${issue.description}
-
-**💡 修改建议**: ${issue.suggestion}
-
-${issue.auto_fixable ? '🔧 *此问题支持自动修复*' : ''}
-
----
-*分类: ${issue.category} | 规则来源: ${issue.rule_source}*`;
-}
-
-/**
- * 获取状态表情符号
- */
-function getStatusEmoji(status: string): string {
-  switch (status) {
-    case 'PASS': return '✅';
-    case 'WARNING': return '⚠️';
-    case 'CRITICAL': return '🚨';
-    default: return '❓';
-  }
 } 
