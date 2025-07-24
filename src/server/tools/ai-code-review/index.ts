@@ -4,7 +4,7 @@ import { GitLabClient } from "../../../gitlab/client";
 import type { 
   CodeReviewIssue, 
     } from "../../../config/types";
-import { analyzeDiffLines, filterReviewableChanges, getCodeReviewRules, getExclusionReason, getFileExtension, shouldReviewFile } from "./helper";
+import { analyzeDiffLines, filterReviewableChanges, getCodeReviewRules, getExclusionReason, getFileExtension, shouldReviewFile } from "./helper.js";
 
 
 

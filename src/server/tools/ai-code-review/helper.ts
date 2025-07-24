@@ -1,5 +1,5 @@
 import { CodeReviewRules, DiffAnalysis, GitLabFileChange } from "../../../config/types";
-import { CODE_REVIEW_RULES, FILE_FILTER_CONFIG } from "../../../utils/const";
+import { CODE_REVIEW_RULES, FILE_FILTER_CONFIG } from "../../../utils/const.js";
 
 /**
  * 分析diff并提取准确的行号信息
