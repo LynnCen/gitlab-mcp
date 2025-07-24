@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp";
 import { z } from "zod";
-import { GitLabClient } from "../../gitlab/client";
+import { GitLabClient } from "../../../gitlab/client";
 
 /**
  * 注册文件操作相关的工具

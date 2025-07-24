@@ -127,3 +127,14 @@ export interface CodeReviewReport {
     };
   };
 } 
+
+
+
+/**
+ * 差异分析结果
+ */
+export interface DiffAnalysis {
+  newLines: Array<{lineNumber: number, content: string}>;
+  deletedLines: Array<{lineNumber: number, content: string}>;
+  contextLines: Array<{lineNumber: number, content: string}>;
+}

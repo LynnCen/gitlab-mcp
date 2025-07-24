@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { GitLabClient } from "../../gitlab/client";
+import { GitLabClient } from "../../../gitlab/client";
 
 /**
  * 注册合并请求相关的工具
