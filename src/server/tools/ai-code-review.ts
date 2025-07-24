@@ -1,5 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
+import {  z } from "zod";
 import { GitLabClient } from "../../gitlab/client";
 import type { 
   AICodeReviewResult, 
@@ -127,7 +127,7 @@ export function registerAICodeReviewTools(server: McpServer, gitlabClient: GitLa
     async ({ filePath, fileExtension }) => {
       try {
         const ext = fileExtension || getFileExtension(filePath);
-        const rules = getCodeReviewRules(ext, filePath);
+        const rules = getCodeReviewRules(ext);
         const shouldReview = shouldReviewFile(filePath, ext);
         
         return {
@@ -355,7 +355,7 @@ function getFileExtension(filePath: string): string {
 /**
  * 获取文件的代码审查规则
  */
-function getCodeReviewRules(extension: string, filePath: string): CodeReviewRules {
+function getCodeReviewRules(extension: string): CodeReviewRules {
   const rules = CODE_REVIEW_RULES[extension];
   if (!rules) {
     return {
@@ -464,7 +464,7 @@ async function performBatchAIReview(
   for (const change of changes) {
     try {
       const extension = getFileExtension(change.new_path);
-      const rules = getCodeReviewRules(extension, change.new_path);
+      const rules = getCodeReviewRules(extension);
       
       // 这里应该调用实际的LLM API，目前使用模拟实现
       const result = await simulateAIReview(change, rules, reviewDepth);

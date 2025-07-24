@@ -45,7 +45,7 @@ export function registerMergeRequestTools(server: McpServer, gitlabClient: GitLa
   );
 
   // 获取合并请求变更
-  server.tool(
+  server.registerTool(
     "get_merge_request_changes",
     {
       title: "获取合并请求变更",
@@ -90,7 +90,7 @@ export function registerMergeRequestTools(server: McpServer, gitlabClient: GitLa
   );
 
   // 列出合并请求
-  server.tool(
+  server.registerTool(
     "list_merge_requests",
     {
       title: "列出合并请求",
@@ -134,7 +134,7 @@ export function registerMergeRequestTools(server: McpServer, gitlabClient: GitLa
   );
 
   // 更新合并请求描述
-  server.tool(
+  server.registerTool(
     "update_merge_request_description",
     {
       title: "更新合并请求描述",

@@ -7,7 +7,7 @@ import { GitLabClient } from "../../gitlab/client";
  */
 export function registerFileOperationTools(server: McpServer, gitlabClient: GitLabClient): void {
   // 获取文件内容
-  server.tool(
+  server.registerTool(
     "get_file_content",
     {
       title: "获取文件内容",

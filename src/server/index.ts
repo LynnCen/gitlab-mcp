@@ -1,5 +1,5 @@
 // 导出服务器主类
-export { GitLabMcpServer } from "./mcp-server";
+export { GitLabMcpServer } from "./mcp-server/index.js";
 
 // 导出工具注册函数
-export * from "./tools";
+export * from "./tools/index.js";

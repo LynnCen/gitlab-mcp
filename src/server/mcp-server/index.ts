@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { GitLabClient } from "../gitlab/client.js";
-import { GitLabConfig } from "../config/types.js";
-import { registerMergeRequestTools, registerFileOperationTools } from "./tools/index.js";
+import { GitLabClient } from "../../gitlab/client.js";
+import { GitLabConfig } from "../../config/types.js";
+import { registerMergeRequestTools, registerFileOperationTools } from "../tools/index.js";
 
 export class GitLabMcpServer {
   private server: McpServer;
