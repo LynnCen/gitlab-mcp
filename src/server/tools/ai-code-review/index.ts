@@ -1,55 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {  z } from "zod";
 import { GitLabClient } from "../../../gitlab/client";
-import type { 
-  CodeReviewIssue, 
-    } from "../../../config/types";
-import { analyzeDiffLines, filterReviewableChanges, getCodeReviewRules, getExclusionReason, getFileExtension, shouldReviewFile } from "./helper.js";
+import { analyzeDiffLines, filterReviewableChanges, formatInlineComment, getCodeReviewRules, getExclusionReason, getFileExtension, shouldReviewFile } from "./helper.js";
 
 
 
-
-/**
- * 评论分级策略
- */
-class CommentPushStrategy {
-  static determineCommentType(issue: CodeReviewIssue, lineNumber: number | null): 'inline' | 'file' | 'summary' {
-    // Critical问题且有精确行号 -> 行内评论
-    if (issue.severity === 'critical' && lineNumber) {
-      return 'inline';
-    }
-    
-    // Warning问题且有行号 -> 行内评论
-    if (issue.severity === 'warning' && lineNumber) {
-      return 'inline';
-    }
-    
-    // 其他问题 -> 文件级评论
-    if (lineNumber || issue.severity === 'warning') {
-      return 'file';
-    }
-    
-    // 建议类问题 -> 汇总评论
-    return 'summary';
-  }
-  
-  static formatInlineComment(issue: CodeReviewIssue, filePath: string): string {
-    const severityEmoji = {
-      'critical': '🚨',
-      'warning': '⚠️', 
-      'suggestion': '💡'
-    };
-    
-    return `${severityEmoji[issue.severity]} **${issue.title}**
-
-${issue.description}
-
-**💡 建议**: ${issue.suggestion}
-
----
-*${issue.category} | ${issue.rule_source}*`;
-  }
-}
 
 /**
  * 注册AI代码审查相关的工具
@@ -214,7 +169,7 @@ export function registerAICodeReviewTools(server: McpServer, gitlabClient: GitLa
         const commentRequests = reviewComments.map(comment => ({
           filePath: comment.filePath,
           lineNumber: comment.lineNumber,
-          body: CommentPushStrategy.formatInlineComment({
+          body: formatInlineComment({
             line_number: comment.lineNumber,
             severity: comment.severity,
             category: comment.category,
@@ -272,160 +227,6 @@ export function registerAICodeReviewTools(server: McpServer, gitlabClient: GitLa
     }
   );
 
-  // 调试工具：检查MR的SHA信息
-  server.registerTool(
-    "debug_mr_sha_info",
-    {
-      title: "调试MR SHA信息",
-      description: "检查合并请求的版本信息、diff_refs和commits，用于调试行内评论问题",
-      inputSchema: {
-        projectPath: z.string().describe("项目路径，格式: owner/repo"),
-        mergeRequestIid: z.number().describe("合并请求的内部ID")
-      }
-    },
-    async ({ projectPath, mergeRequestIid }) => {
-      try {
-        console.log(`🔍 调试MR SHA信息: ${projectPath}#${mergeRequestIid}`);
-        
-        const project = await gitlabClient.getProject(projectPath);
-        const debugInfo: any = {
-          project_id: project.id,
-          mr_iid: mergeRequestIid,
-          timestamp: new Date().toISOString()
-        };
-
-        // 1. 尝试获取版本信息
-        try {
-          const versions = await (gitlabClient as any).getMergeRequestVersions(project.id, mergeRequestIid);
-          debugInfo.versions = {
-            success: true,
-            count: versions?.length || 0,
-            data: versions,
-            latest_version: versions?.[0] || null
-          };
-        } catch (error) {
-          debugInfo.versions = {
-            success: false,
-            error: error instanceof Error ? error.message : String(error)
-          };
-        }
-
-        // 2. 获取MR基本信息
-        try {
-          const mr = await gitlabClient.getMergeRequest(project.id, mergeRequestIid);
-          debugInfo.merge_request = {
-            success: true,
-            sha: (mr as any).sha,
-            diff_refs: (mr as any).diff_refs,
-            source_branch: (mr as any).source_branch,
-            target_branch: (mr as any).target_branch,
-            state: (mr as any).state
-          };
-        } catch (error) {
-          debugInfo.merge_request = {
-            success: false,
-            error: error instanceof Error ? error.message : String(error)
-          };
-        }
-
-        // 3. 获取commits信息
-        try {
-          const commits = await gitlabClient.getMergeRequestCommits(project.id, mergeRequestIid);
-          debugInfo.commits = {
-            success: true,
-            count: commits?.length || 0,
-            first_commit: commits?.[0] ? {
-              id: commits[0].id,
-              short_id: commits[0].short_id,
-              title: commits[0].title
-            } : null,
-            last_commit: commits?.length > 0 ? {
-              id: commits[commits.length - 1].id,
-              short_id: commits[commits.length - 1].short_id,
-              title: commits[commits.length - 1].title
-            } : null
-          };
-        } catch (error) {
-          debugInfo.commits = {
-            success: false,
-            error: error instanceof Error ? error.message : String(error)
-          };
-        }
-
-        // 4. 分析可用的SHA来源
-        const shaAnalysis: any = {
-          available_sources: [],
-          recommended_method: null
-        };
-
-        if (debugInfo.versions.success && debugInfo.versions.latest_version) {
-          const v = debugInfo.versions.latest_version;
-          const base_sha = v.base_commit_sha || v.base_sha;
-          const start_sha = v.start_commit_sha || v.start_sha;
-          const head_sha = v.head_commit_sha || v.head_sha;
-          
-          if (base_sha && start_sha && head_sha) {
-            shaAnalysis.available_sources.push({
-              method: 'versions_api',
-              priority: 1,
-              base_sha: base_sha?.substring(0, 8),
-              start_sha: start_sha?.substring(0, 8),
-              head_sha: head_sha?.substring(0, 8),
-              complete: true
-            });
-            shaAnalysis.recommended_method = 'versions_api';
-          }
-        }
-
-        if (debugInfo.merge_request.success && debugInfo.merge_request.diff_refs) {
-          const dr = debugInfo.merge_request.diff_refs;
-          if (dr.base_sha && dr.start_sha && dr.head_sha) {
-            shaAnalysis.available_sources.push({
-              method: 'diff_refs',
-              priority: 2,
-              base_sha: dr.base_sha?.substring(0, 8),
-              start_sha: dr.start_sha?.substring(0, 8),
-              head_sha: dr.head_sha?.substring(0, 8),
-              complete: true
-            });
-            if (!shaAnalysis.recommended_method) {
-              shaAnalysis.recommended_method = 'diff_refs';
-            }
-          }
-        }
-
-        if (debugInfo.commits.success && debugInfo.commits.count > 0) {
-          shaAnalysis.available_sources.push({
-            method: 'commits',
-            priority: 3,
-            base_sha: debugInfo.commits.first_commit?.id?.substring(0, 8),
-            start_sha: debugInfo.commits.first_commit?.id?.substring(0, 8),
-            head_sha: debugInfo.commits.last_commit?.id?.substring(0, 8),
-            complete: !!(debugInfo.commits.first_commit && debugInfo.commits.last_commit),
-            note: '备用方案，可能不够准确'
-          });
-          if (!shaAnalysis.recommended_method) {
-            shaAnalysis.recommended_method = 'commits';
-          }
-        }
-
-        debugInfo.sha_analysis = shaAnalysis;
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(debugInfo, null, 2)
-            }
-          ]
-        };
-        
-      } catch (error) {
-        console.error('❌ 调试信息获取失败:', error);
-        throw new Error(`调试信息获取失败: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    }
-  );
 
   // 批量文件过滤工具
   server.registerTool(

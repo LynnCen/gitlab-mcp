@@ -1,4 +1,4 @@
-import { CodeReviewRules, DiffAnalysis, GitLabFileChange } from "../../../config/types";
+import { CodeReviewIssue, CodeReviewRules, DiffAnalysis, GitLabFileChange } from "../../../config/types";
 import { CODE_REVIEW_RULES, FILE_FILTER_CONFIG } from "../../../utils/const.js";
 
 /**
@@ -142,3 +142,27 @@ export function analyzeDiffLines(diff: string): DiffAnalysis {
     
     return '未知原因';
   } 
+
+
+export function formatInlineComment(issue: CodeReviewIssue, filePath: string): string {
+    const severityConfig = {
+      'critical': { emoji: '🚨', label: 'Critical', color: '🔴' },
+      'warning': { emoji: '⚠️', label: 'Warning', color: '🟡' }, 
+      'suggestion': { emoji: '💡', label: 'Suggestion', color: '🔵' }
+    };
+    
+    const config = severityConfig[issue.severity];
+    
+    return `### ${config.emoji} **${issue.title}**
+
+> ${config.color} **${config.label}** · ${issue.category}
+
+**📋 问题描述**
+${issue.description}
+
+**🔧 修复建议**
+${issue.suggestion}
+
+
+`;
+  }
