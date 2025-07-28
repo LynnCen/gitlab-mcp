@@ -17,13 +17,20 @@
 - 📡 **stdio传输**: 标准的stdio传输方式，完美兼容Cursor、Claude Desktop等客户端
 - ⚙️ **配置化支持**: 支持多GitLab实例，通过环境变量轻松配置
 - 🛠️ **完整的MR工具集**: 提供获取MR、变更文件、文件内容等全套工具
+- 🤖 **智能代码审查**: 支持AI驱动的代码审查，自动生成和推送审查评论
+- 📝 **行内评论支持**: 精确的行级代码评论，支持critical/warning/suggestion分级
+- 🔍 **变更分析**: 深度分析MR变更，提供结构化的diff数据
+- 📋 **审查规则引擎**: 基于文件类型和路径的智能审查规则匹配
 - 📦 **单文件部署**: 构建为单个可执行JavaScript文件，部署简单
 - 🔒 **安全可靠**: 支持私有GitLab实例，内置重试机制和错误处理
 - ⚡ **高性能**: 异步处理，支持批量操作，响应迅速
 
 ## 🎯 适用场景
 
-- **代码审查**: 快速获取MR信息和变更内容
+- **智能代码审查**: 与AI助手结合，自动分析代码变更并生成专业的审查评论
+- **团队协作**: 标准化代码审查流程，支持多种严重级别的问题分类
+- **质量把控**: 基于文件类型和项目规范的智能审查规则引擎
+- **传统代码审查**: 快速获取MR信息和变更内容
 - **项目管理**: 批量查看和管理合并请求
 - **文档编写**: 获取项目文件内容用于文档生成
 - **自动化工作流**: 与AI助手结合，自动化代码审查和项目管理
@@ -111,39 +118,79 @@
 
 4. **配置cursor rules**
 
-请查看当前目录下的rules.mdc文件，并配置到cursor中
+- 配置mr-description-generator.mdc文件，并配置到cursor rules中
+- 配置mr-code-review.mdc文件，并配置到cursor rules中
 
 5. **重启Cursor**
    
- 保存配置后重启Cursor使配置生效。
+保存配置后重启Cursor使配置生效。
 
 ### 使用示例
 
-**完整工作流示例：**
+**生成Mr描述**
 
-查看项目为gdesign/meta，mrid为10821的mr信息以及所有变更内容，按照mr生成规划生成文档，随后将该文档帮我更新到对应的mrid的描述下
+```text
+查看项目为gdesign/meta，mrid为10821的mr信息以及所有变更内容，按照mr生成规划生成文档，随后将该文档帮我更新到对
+应的mrid的描述下
+```
+
+**AI代码审查完整工作流：**
+
+```text
+请分析项目 gdesign/meta 中 MR #11401 的所有变更，并按照项目代码规范进行全面的代码审查
+```
+
+**具体功能示例：**
+
+```text
+请获取项目 company/awesome-project 中 MR #123 的详细信息
+```
+
+```text
+请查看项目 company/awesome-project 中 MR #123 的文件变更，包含diff内容
+```
+
+```text
+请分析项目 company/awesome-project 中 MR #123 的变更，重点关注 src/ 目录下的文件
+```
+
+```text
+请对项目 company/awesome-project 的 MR #123 进行代码审查，并将评论推送到GitLab
+```
+
+```text
+请获取项目 company/awesome-project 中 src/main.ts 文件的内容
+```
+
+```text
+请列出项目 company/awesome-project 中所有正在进行的合并请求
+```
+
+```text
+请更新项目 company/awesome-project 中 MR #123 的描述为: "## 功能更新\n\n- 添加用户认证\n- 修复登录问题"
+```
 
 **在Cursor中的使用示例：**
 
 配置完成后，您可以在Cursor的聊天界面中使用以下命令：
 
-```
+```text
 请获取项目 company/awesome-project 中 MR #123 的详细信息
 ```
 
-```
+```text
 请查看项目 company/awesome-project 中 MR #123 的文件变更，包含diff内容
 ```
 
-```
+```text
 请获取项目 company/awesome-project 中 src/main.ts 文件的内容
 ```
 
-```
+```text
 请列出项目 company/awesome-project 中所有正在进行的合并请求
 ```
 
-```
+```text
 请更新项目 company/awesome-project 中 MR #123 的描述为: "## 功能更新\n\n- 添加用户认证\n- 修复登录问题"
 ```
 
@@ -154,6 +201,7 @@
 获取指定项目的合并请求详细信息。
 
 **参数:**
+
 - `projectPath` (string): 项目路径，格式: `owner/repo`
 - `mergeRequestIid` (number): 合并请求的内部ID
 
@@ -307,6 +355,232 @@
 }
 ```
 
+### 6. analyze_mr_changes
+
+分析合并请求的文件变更和差异信息，为代码审查提供基础数据。
+
+**参数:**
+- `projectPath` (string): 项目路径，格式: `owner/repo`
+- `mergeRequestIid` (number): 合并请求的内部ID
+- `focusFiles` (string[], 可选): 重点关注的文件列表
+
+**返回示例:**
+```json
+{
+  "merge_request": {
+    "title": "feat: 添加新功能",
+    "author": "developer",
+    "source_branch": "feature/new-feature",
+    "target_branch": "main",
+    "web_url": "https://gitlab.com/project/-/merge_requests/42"
+  },
+  "analysis_summary": {
+    "total_files": 15,
+    "reviewable_files": 8,
+    "excluded_files": 7
+  },
+  "file_analysis": [
+    {
+      "file_path": "src/components/Button.tsx",
+      "change_type": "modified",
+      "extension": ".tsx",
+      "diff_lines": 45,
+      "diff_analysis": {
+        "newLines": [
+          {"lineNumber": 23, "content": "const handleClick = () => {"},
+          {"lineNumber": 24, "content": "  onClick?.();"}
+        ],
+        "deletedLines": [],
+        "contextLines": [
+          {"lineNumber": 22, "content": "return ("}
+        ]
+      },
+      "raw_diff": "@@ -20,5 +20,7 @@ export function Button() {\n+  const handleClick = () => {\n+    onClick?.();\n+  };\n   return ("
+    }
+  ],
+  "analyzed_at": "2024-01-16T14:45:00.000Z"
+}
+```
+
+### 7. push_code_review_comments
+
+将cursor生成的代码审查评论推送到GitLab MR，支持行内评论和文件级评论。
+
+**参数:**
+- `projectPath` (string): 项目路径，格式: `owner/repo`
+- `mergeRequestIid` (number): 合并请求的内部ID
+- `reviewComments` (array): 代码审查评论列表
+- `summaryComment` (string, 可选): 总体审查评论
+- `commentStyle` (string, 可选): 评论风格，可选值: `detailed`, `summary`, `minimal`
+
+**reviewComments 数组项结构:**
+- `filePath` (string): 文件路径
+- `lineNumber` (number, 可选): 行号，用于行内评论
+- `severity` (string): 问题严重级别，可选值: `critical`, `warning`, `suggestion`
+- `title` (string): 问题标题
+- `description` (string): 问题描述
+- `suggestion` (string): 修改建议
+- `category` (string, 可选): 问题分类
+- `autoFixable` (boolean, 可选): 是否可自动修复
+
+**返回示例:**
+```json
+{
+  "success": true,
+  "summary": {
+    "total_comments": 5,
+    "successful_comments": 5,
+    "failed_comments": 0,
+    "inline_comments": 3,
+    "file_comments": 2,
+    "summary_comment_added": true
+  },
+  "summary_comment": {
+    "id": 731879
+  },
+  "comment_results": [
+    {
+      "filePath": "src/auth/login.ts",
+      "lineNumber": 45,
+      "body": "### 🚨 **SQL注入风险**\n\n> 🔴 **Critical** · 安全\n\n直接拼接用户输入到查询中存在安全风险\n\n**🔧 修复建议**\n使用参数化查询或ORM防止SQL注入",
+      "severity": "critical",
+      "success": true,
+      "id": "abc123",
+      "type": "inline"
+    }
+  ],
+  "message": "已成功推送 5 条代码审查评论到 MR #42",
+  "pushed_at": "2024-01-16T14:45:00.000Z"
+}
+```
+
+### 8. filter_reviewable_files
+
+根据配置规则过滤出需要代码审查的文件。
+
+**参数:**
+- `projectPath` (string): 项目路径，格式: `owner/repo`
+- `mergeRequestIid` (number): 合并请求的内部ID
+- `focusFiles` (string[], 可选): 重点关注的文件列表
+
+**返回示例:**
+```json
+{
+  "total_files": 15,
+  "reviewable_files": 8,
+  "excluded_files": 7,
+  "files": [
+    {
+      "file_path": "src/components/Button.tsx",
+      "reviewable": true,
+      "reason": "TypeScript React组件"
+    },
+    {
+      "file_path": "package-lock.json",
+      "reviewable": false,
+      "reason": "自动生成的依赖文件"
+    }
+  ],
+  "exclusion_rules": [
+    "*.lock",
+    "*.min.js",
+    "dist/*",
+    "node_modules/*"
+  ]
+}
+```
+
+### 9. get_file_code_review_rules
+
+根据文件类型和路径获取相应的代码审查规则。
+
+**参数:**
+- `filePath` (string): 文件路径
+- `fileExtension` (string, 可选): 文件扩展名
+
+**返回示例:**
+```json
+{
+  "file_path": "src/components/Button.tsx",
+  "file_type": "typescript-react",
+  "rules": [
+    {
+      "category": "类型安全",
+      "rules": [
+        "必须使用TypeScript类型定义",
+        "避免使用any类型",
+        "Props必须有接口定义"
+      ]
+    },
+    {
+      "category": "React规范",
+      "rules": [
+        "使用函数组件和Hooks",
+        "正确使用useEffect依赖",
+        "避免在render中创建对象"
+      ]
+    }
+  ],
+  "severity_mapping": {
+    "类型安全": "warning",
+    "性能问题": "warning",
+    "安全漏洞": "critical"
+  }
+}
+```
+
+### 10. debug_mr_sha_info
+
+检查合并请求的版本信息、diff_refs和commits，用于调试行内评论问题。
+
+**参数:**
+- `projectPath` (string): 项目路径，格式: `owner/repo`
+- `mergeRequestIid` (number): 合并请求的内部ID
+
+**返回示例:**
+```json
+{
+  "versions": {
+    "success": true,
+    "data": [
+      {
+        "id": 123,
+        "head_commit_sha": "abc123def456",
+        "base_commit_sha": "def456ghi789",
+        "start_commit_sha": "ghi789jkl012"
+      }
+    ],
+    "latest_version": {
+      "head_commit_sha": "abc123def456",
+      "base_commit_sha": "def456ghi789"
+    }
+  },
+  "merge_request": {
+    "success": true,
+    "diff_refs": {
+      "base_sha": "def456ghi789",
+      "head_sha": "abc123def456",
+      "start_sha": "ghi789jkl012"
+    }
+  },
+  "sha_analysis": {
+    "available_sources": [
+      {
+        "method": "versions_api",
+        "priority": 1,
+        "complete": true
+      },
+      {
+        "method": "diff_refs",
+        "priority": 2,
+        "complete": true
+      }
+    ],
+    "recommended_method": "versions_api"
+  }
+}
+```
+
 ## 🔑 GitLab Token配置
 
 ### 创建访问令牌
@@ -331,9 +605,14 @@
 | `api` | 访问GitLab REST API | ✅ |
 | `read_user` | 获取用户信息和验证连接 | ✅ |
 | `read_repository` | 读取项目文件和MR信息 | ✅ |
-| `write_repository` | 更新MR描述等写入操作 | ✅ |
+| `write_repository` | 更新MR描述和推送代码审查评论 | ✅ |
 | `read_merge_request` | 访问MR详细信息 | 自动包含在api中 |
 
+**⚠️ 重要说明**:
+
+- 代码审查功能需要 `write_repository` 权限来推送评论
+- 行内评论需要访问MR的版本信息和diff数据
+- 确保token对目标项目有足够的访问权限
 
 ## 🛠️ 开发指南
 
@@ -438,11 +717,16 @@ node /path/to/gitlab-mcp/dist/src/index.js
 
 ## 🚧 路线图
 
-- [ ] 支持更多GitLab API功能
-- [ ] 添加缓存机制提升性能
-- [ ] 支持批量操作
-- [ ] 添加配置文件支持
-- [ ] 实现更详细的错误处理
+- [x] ✅ **智能代码审查**: 支持AI驱动的代码审查和评论推送
+- [x] ✅ **行内评论**: 精确的行级代码评论功能  
+- [x] ✅ **变更分析**: 深度分析MR变更和diff数据
+- [x] ✅ **审查规则**: 基于文件类型的智能审查规则引擎
+- [x] ✅ **评论分级**: 支持critical/warning/suggestion三级分类
+- [ ] 🔄 **批量审查**: 支持多MR批量代码审查
+- [ ] 📊 **审查报告**: 生成详细的代码质量报告
+- [ ] ⚡ **性能优化**: 添加缓存机制提升性能
+- [ ] 📝 **配置文件**: 支持项目级审查规则配置文件
+- [ ] 🔧 **更多GitLab功能**: 支持Issue、Pipeline等更多API功能
 
 ## 🤝 贡献
 
