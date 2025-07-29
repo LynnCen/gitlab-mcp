@@ -95,6 +95,6 @@ export const FILE_FILTER_CONFIG: FileFilterConfig = {
       /CHANGELOG/i,
       /LICENSE/i
     ],
-    maxFileSize: 100 * 1024, // 100KB
-    maxDiffLines: 500
+    maxFileSize: 1000 * 1024, // 1000KB
+    maxDiffLines: 10000
   };
