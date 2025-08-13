@@ -73,10 +73,12 @@
    ```
 
 5. **测试服务器**
+
    ```bash
    # 测试连接
    node dist/src/index.js
    ```
+
    如果看到"✅ 已连接到GitLab"消息，说明配置成功。
 
 ## 🖥️ 在Cursor中使用
@@ -138,8 +140,6 @@
 ```text
 查看项目为gdesign/meta，mrid为10821的mr信息以及所有变更内容，按照mr生成技术方案，使用markdown格式输出。
 ```
-
-
 
 **AI代码审查完整工作流：**
 
@@ -237,11 +237,13 @@
 获取合并请求的文件变更列表，可选择包含diff内容。
 
 **参数:**
+
 - `projectPath` (string): 项目路径
 - `mergeRequestIid` (number): 合并请求的内部ID
 - `includeContent` (boolean, 可选): 是否包含文件diff内容，默认false
 
 **返回示例:**
+
 ```json
 {
   "changes": [
