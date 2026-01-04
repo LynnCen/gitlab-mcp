@@ -9,8 +9,11 @@
   },
   "scripts": {
     "build": "npm run clean && tsc && chmod +x dist/src/index.js",
+    "build:v2": "npm run clean && tsc -p tsconfig-v2.json && chmod +x dist/src-v2/index.js",
     "dev": "tsc --watch",
+    "dev:v2": "tsx watch src-v2/index.ts",
     "start": "node dist/src/index.js",
+    "start:v2": "node dist/src-v2/index.js",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build",
     "test": "tsx tests/integration/mr-changes.test.ts",
@@ -18,7 +21,17 @@
     "test:mr_changes": "tsx tests/integration/mr-changes.test.ts",
     "test:logs": "ls -la tests/logs/",
     "test:clean": "rm -rf tests/logs/*",
-    "test:help": "tsx tests/integration/quick.test.ts --help"
+    "test:help": "tsx tests/integration/quick.test.ts --help",
+    "test:v2": "vitest",
+    "test:v2:ui": "vitest --ui",
+    "test:v2:coverage": "vitest --coverage",
+    "test:v2:baseline": "tsx tests-v2/benchmarks/performance-baseline.ts",
+    "lint": "eslint src-v2/**/*.ts",
+    "lint:fix": "eslint src-v2/**/*.ts --fix",
+    "format": "prettier --write \"src-v2/**/*.{ts,json,md}\"",
+    "format:check": "prettier --check \"src-v2/**/*.{ts,json,md}\"",
+    "type-check": "tsc --noEmit",
+    "type-check:v2": "tsc -p tsconfig-v2.json --noEmit"
   },
   "keywords": [
     "gitlab",
@@ -39,7 +52,16 @@
   "devDependencies": {
     "@types/node": "^20.11.0",
     "tsx": "^4.20.3",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^1.6.0",
+    "@vitest/ui": "^1.6.0",
+    "c8": "^8.0.1",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "prettier": "^3.3.3",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.10"
   },
   "engines": {
     "node": ">=18.0.0"

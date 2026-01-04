@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+. "$(dirname "$0")/_/husky.sh"
+
+# 检查提交信息格式（可选，如果需要 commitlint）
+# npx commitlint --edit "$1"
+

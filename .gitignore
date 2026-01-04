@@ -43,4 +43,13 @@ Thumbs.db
 
 # Package manager lockfiles (keep pnpm-lock.yaml)
 package-lock.json
-yarn.lock 
+yarn.lock
+
+# v2 构建输出
+dist/src-v2/
+
+# 测试覆盖率
+coverage/
+
+# Husky
+.husky/_/ 
