@@ -1,30 +1,31 @@
 {
-  "env": {
-    "browser": true,
-    "es2021": true,
-    "node": true
-  },
-  "extends": [
-    "eslint:recommended",
-    "@typescript-eslint/recommended",
-    "@typescript-eslint/recommended-requiring-type-checking"
-  ],
+  "root": true,
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "ecmaVersion": "latest",
+    "ecmaVersion": 2022,
     "sourceType": "module",
-    "project": "./tsconfig.json"
+    "project": "./tsconfig-v2.json"
   },
   "plugins": ["@typescript-eslint"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking"
+  ],
   "rules": {
-    "indent": ["error", 2],
-    "linebreak-style": ["error", "unix"],
-    "quotes": ["error", "single"],
-    "semi": ["error", "always"],
-    "@typescript-eslint/no-unused-vars": "error",
-    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "@typescript-eslint/explicit-function-return-type": "warn",
-    "@typescript-eslint/prefer-readonly": "error",
-    "@typescript-eslint/no-floating-promises": "error"
-  }
-} 
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-floating-promises": "error",
+    "@typescript-eslint/no-misused-promises": "error",
+    "prefer-const": "error",
+    "no-var": "error"
+  },
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    "src/**/*",
+    "tests/**/*",
+    "*.config.js"
+  ]
+}

@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+coverage
+*.log
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+src/**
+tests/**
+tests-v2/**/*.test.ts
+
