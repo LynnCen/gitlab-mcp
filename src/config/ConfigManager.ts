@@ -3,6 +3,8 @@
  * 负责管理所有应用配置，包括环境变量读取和验证
  */
 
+import type { AICodeReviewConfig } from './types.js';
+
 export interface GitLabConfig {
   host: string;
   token: string;
@@ -19,6 +21,7 @@ export interface ServerConfig {
 export interface AppConfig {
   gitlab: GitLabConfig;
   server: ServerConfig;
+  aiCodeReview: AICodeReviewConfig;
   debug: boolean;
 }
 
@@ -63,6 +66,13 @@ export class ConfigManager {
   }
 
   /**
+   * 获取AI代码审查配置
+   */
+  public getAICodeReviewConfig(): AICodeReviewConfig {
+    return { ...this.config.aiCodeReview };
+  }
+
+  /**
    * 是否为调试模式
    */
   public isDebug(): boolean {
@@ -81,6 +91,16 @@ export class ConfigManager {
     const debug = process.env['DEBUG'] === 'true' || process.env['NODE_ENV'] === 'development';
     const corsOrigins = process.env['CORS_ORIGINS']?.split(',') || ['*'];
 
+    // AI代码审查配置
+    const aiCodeReviewEnabled = process.env['AI_CODE_REVIEW_ENABLED'] === 'true';
+    const aiProvider = (process.env['AI_PROVIDER'] || 'local') as 'openai' | 'claude' | 'gemini' | 'local';
+    const aiApiKey = process.env['AI_API_KEY'] || '';
+    const aiModel = process.env['AI_MODEL'] || 'gpt-3.5-turbo';
+    const aiTemperature = parseFloat(process.env['AI_TEMPERATURE'] || '0.1');
+    const aiMaxTokens = parseInt(process.env['AI_MAX_TOKENS'] || '4000');
+    const aiAutoComment = process.env['AI_AUTO_COMMENT'] === 'true';
+    const aiReviewDepth = (process.env['AI_REVIEW_DEPTH'] || 'standard') as 'quick' | 'standard' | 'thorough';
+
     return {
       gitlab: {
         host: gitlabHost,
@@ -92,6 +112,16 @@ export class ConfigManager {
         port: serverPort,
         host: serverHost,
         corsOrigins,
+      },
+      aiCodeReview: {
+        enabled: aiCodeReviewEnabled,
+        llmProvider: aiProvider,
+        apiKey: aiApiKey,
+        model: aiModel,
+        temperature: aiTemperature,
+        maxTokens: aiMaxTokens,
+        autoComment: aiAutoComment,
+        reviewDepth: aiReviewDepth,
       },
       debug,
     };

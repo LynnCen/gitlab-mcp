@@ -1,45 +1,71 @@
 #!/usr/bin/env node
 
-import 'dotenv/config';
-import { ExpressServer } from './server/ExpressServer.js';
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { ConfigManager } from "./config/ConfigManager.js";
+import { GitLabMcpServer } from "./server/index.js";
 
 /**
- * 主函数
+ * 创建并初始化 GitLab MCP 服务器
+ */
+async function createServer(): Promise<GitLabMcpServer> {
+  const configManager = ConfigManager.getInstance();
+  const config = configManager.getGitLabConfig();
+  
+  const mcpServer = new GitLabMcpServer(config);
+  await mcpServer.initialize();
+  
+  return mcpServer;
+}
+
+/**
+ * 主函数 - 启动 GitLab MCP 服务器
  */
 async function main(): Promise<void> {
   try {
-    console.log('='.repeat(50));
-    console.log('🚀 启动 GitLab MCP 服务器');
-    console.log('='.repeat(50));
-
-    // 创建并启动服务器
-    const server = new ExpressServer();
-    await server.start();
-
-    // 优雅关闭处理
-    const shutdown = async () => {
-      console.log('\n正在关闭服务器...');
-      await server.stop();
-      process.exit(0);
-    };
-
-    process.on('SIGINT', shutdown);
-    process.on('SIGTERM', shutdown);
-
+    const mcpServer = await createServer();
+    const transport = new StdioServerTransport();
+    
+    // 连接服务器和传输层
+    await mcpServer.getServer().connect(transport);
+    
+    console.error("✅ GitLab MCP 服务器已启动");
   } catch (error) {
-    console.error('❌ 服务器启动失败:', error);
-    console.error('\n💡 常见问题排查:');
-    console.error('   1. 检查环境变量 GITLAB_HOST 和 GITLAB_TOKEN 是否正确设置');
-    console.error('   2. 确认 GitLab 服务器网络连接正常');
-    console.error('   3. 验证 GitLab 访问令牌权限（需要 api, read_user, read_repository）');
-    console.error('   4. 检查端口是否被占用');
+    console.error("❌ 服务器启动失败:", error);
     process.exit(1);
   }
 }
 
-// 错误处理
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('未处理的 Promise 拒绝:', reason);
+/**
+ * 进程信号处理
+ */
+function setupSignalHandlers(): void {
+  process.on('SIGINT', () => {
+    console.error('收到 SIGINT 信号，正在关闭服务器...');
+    process.exit(0);
+  });
+
+  process.on('SIGTERM', () => {
+    console.error('收到 SIGTERM 信号，正在关闭服务器...');
+    process.exit(0);
+  });
+
+  process.on('uncaughtException', (error) => {
+    console.error('未捕获的异常:', error);
+    process.exit(1);
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('未处理的 Promise 拒绝:', reason, 'at:', promise);
+    process.exit(1);
+  });
+}
+
+// 设置信号处理器
+setupSignalHandlers();
+
+// 启动服务器
+main().catch((error) => {
+  console.error('❌ 服务器启动失败:', error);
   process.exit(1);
 });
 

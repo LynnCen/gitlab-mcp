@@ -1,0 +1,21 @@
+# 排除构建输出目录
+dist/ linguist-generated=true
+build/ linguist-generated=true
+
+# 排除配置文件和依赖文件
+package.json linguist-documentation=true
+package-lock.json linguist-generated=true
+pnpm-lock.yaml linguist-generated=true
+yarn.lock linguist-generated=true
+tsconfig.json linguist-documentation=true
+.eslintrc.json linguist-documentation=true
+cursor-mcp-config.json linguist-documentation=true
+
+# 明确指定 TypeScript 为主要语言
+*.ts linguist-language=TypeScript
+*.tsx linguist-language=TypeScript
+
+# 排除文档文件
+*.md linguist-documentation=true
+USAGE.md linguist-documentation=true
+README.md linguist-documentation=true 

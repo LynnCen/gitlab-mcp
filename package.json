@@ -1,61 +1,68 @@
 {
   "name": "gitlab-mcp-server",
-  "version": "1.0.0",
-  "description": "一个可扩展的GitLab MCP服务器，支持多种GitLab操作和AI驱动的代码分析",
-  "main": "dist/index.js",
+  "version": "1.1.0",
+  "description": "标准的GitLab MCP服务器，支持stdio传输和配置化的GitLab操作",
+  "main": "dist/src/index.js",
   "type": "module",
   "bin": {
-    "gitlab-mcp": "dist/index.js"
+    "gitlab-mcp": "dist/src/index.js"
   },
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "./scripts/dev.sh",
-    "serve": "./scripts/start.sh",
-    "serve:skip-build": "./scripts/start.sh --skip-build",
+    "build": "npm run clean && tsc && chmod +x dist/src/index.js",
+    "build:v2": "npm run clean && tsc -p tsconfig-v2.json && chmod +x dist/src-v2/index.js",
+    "dev": "tsc --watch",
+    "dev:v2": "tsx watch src-v2/index.ts",
+    "start": "node dist/src/index.js",
+    "start:v2": "node dist/src-v2/index.js",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test-gitlab": "./scripts/start.sh --test-only",
-    "lint": "eslint src/**/*.ts",
-    "lint:fix": "eslint src/**/*.ts --fix"
+    "test": "tsx tests/integration/mr-changes.test.ts",
+    "test:quick": "tsx tests/integration/quick.test.ts",
+    "test:mr_changes": "tsx tests/integration/mr-changes.test.ts",
+    "test:logs": "ls -la tests/logs/",
+    "test:clean": "rm -rf tests/logs/*",
+    "test:help": "tsx tests/integration/quick.test.ts --help",
+    "test:v2": "vitest",
+    "test:v2:ui": "vitest --ui",
+    "test:v2:coverage": "vitest --coverage",
+    "test:v2:baseline": "tsx tests-v2/benchmarks/performance-baseline.ts",
+    "lint": "eslint src-v2/**/*.ts",
+    "lint:fix": "eslint src-v2/**/*.ts --fix",
+    "format": "prettier --write \"src-v2/**/*.{ts,json,md}\"",
+    "format:check": "prettier --check \"src-v2/**/*.{ts,json,md}\"",
+    "type-check": "tsc --noEmit",
+    "type-check:v2": "tsc -p tsconfig-v2.json --noEmit"
   },
   "keywords": [
     "gitlab",
     "mcp",
     "model-context-protocol",
     "merge-request",
-    "ai",
-    "cursor",
-    "typescript",
-    "devtools"
+    "stdio",
+    "typescript"
   ],
-  "author": "Your Name",
+  "author": "Lynncen",
   "license": "MIT",
-  "packageManager": "pnpm@10.11.0",
   "dependencies": {
-    "@gitbeaker/node": "^35.8.1",
-    "@modelcontextprotocol/sdk": "^0.5.0",
-    "express": "^4.18.2",
-    "dotenv": "^16.4.5"
+    "@gitbeaker/rest": "^43.0.0",
+    "@modelcontextprotocol/sdk": "^1.15.1",
+    "dotenv": "^17.2.0",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "@types/express": "^4.17.21",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "eslint": "^8.56.0",
-    "jest": "^29.7.0",
-    "@types/jest": "^29.5.12",
-    "ts-jest": "^29.1.2",
-    "typescript": "^5.3.3"
+    "tsx": "^4.20.3",
+    "typescript": "^5.3.3",
+    "vitest": "^1.6.0",
+    "@vitest/ui": "^1.6.0",
+    "c8": "^8.0.1",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "prettier": "^3.3.3",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.10"
   },
-  "files": [
-    "dist/**/*",
-    "README.md",
-    "LICENSE"
-  ],
   "engines": {
     "node": ">=18.0.0"
   }

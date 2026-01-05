@@ -1,0 +1,41 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/src-v2",
+    "rootDir": "./src-v2",
+    "baseUrl": "./src-v2",
+    "paths": {
+      "@/*": ["./*"],
+      "@core/*": ["./core/*"],
+      "@transport/*": ["./transport/*"],
+      "@capabilities/*": ["./capabilities/*"],
+      "@middleware/*": ["./middleware/*"],
+      "@services/*": ["./services/*"],
+      "@repositories/*": ["./repositories/*"],
+      "@plugins/*": ["./plugins/*"],
+      "@config/*": ["./config/*"],
+      "@logging/*": ["./logging/*"],
+      "@errors/*": ["./errors/*"],
+      "@cache/*": ["./cache/*"],
+      "@monitoring/*": ["./monitoring/*"],
+      "@types/*": ["./types/*"],
+      "@utils/*": ["./utils/*"]
+    },
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noImplicitAny": true
+  },
+  "include": [
+    "src-v2/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests-v2"
+  ]
+}
+
