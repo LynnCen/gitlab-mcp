@@ -30,12 +30,12 @@
     "noImplicitAny": true
   },
   "include": [
-    "src-v2/**/*"
+    "src-v2/**/*",
+    "tests-v2/**/*"
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "tests-v2"
+    "dist"
   ]
 }
 
