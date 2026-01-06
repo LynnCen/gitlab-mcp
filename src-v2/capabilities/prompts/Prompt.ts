@@ -1,5 +1,5 @@
 /**
- * 提示接口
+ * 提示接口和基类
  */
 
 import type { PromptArgument, PromptExample } from './types.js';
@@ -44,3 +44,16 @@ export interface IPrompt {
   render(args: Record<string, any>): Promise<string>;
 }
 
+/**
+ * 提示抽象基类
+ */
+export abstract class Prompt implements IPrompt {
+  abstract readonly name: string;
+  abstract readonly description: string;
+  abstract readonly arguments: PromptArgument[];
+  abstract readonly template: string;
+  readonly version: string = '1.0.0';
+  readonly examples?: PromptExample[];
+
+  abstract render(args: Record<string, any>): Promise<string>;
+}

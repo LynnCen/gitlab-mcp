@@ -1,5 +1,5 @@
 /**
- * 工具接口
+ * 工具接口和基类
  */
 
 import type { ZodSchema } from './types.js';
@@ -37,6 +37,18 @@ export interface ITool {
   /**
    * 执行工具
    */
-  execute(params: any, context: ExecutionContext): Promise<ToolResult>;
+  execute(params: unknown, context: ExecutionContext): Promise<ToolResult>;
 }
 
+/**
+ * 工具抽象基类
+ */
+export abstract class Tool implements ITool {
+  abstract readonly name: string;
+  abstract readonly description: string;
+  abstract readonly inputSchema: ZodSchema;
+  readonly outputSchema?: ZodSchema;
+  readonly metadata?: ToolMetadata;
+
+  abstract execute(params: unknown, context: ExecutionContext): Promise<ToolResult>;
+}

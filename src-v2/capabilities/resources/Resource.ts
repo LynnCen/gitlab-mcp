@@ -1,5 +1,5 @@
 /**
- * 资源接口
+ * 资源接口和基类
  */
 
 import type { ResourceContent } from './types.js';
@@ -59,3 +59,18 @@ export interface IResource {
   subscribe?(callback: (content: ResourceContent) => void): () => void;
 }
 
+/**
+ * 资源抽象基类
+ */
+export abstract class Resource implements IResource {
+  abstract readonly uri: string;
+  abstract readonly name: string;
+  abstract readonly description: string;
+  abstract readonly mimeType: string;
+  readonly size?: number;
+  readonly metadata?: Record<string, any>;
+  abstract readonly cacheable: boolean;
+  abstract readonly subscribable: boolean;
+
+  abstract getContent(): Promise<ResourceContent>;
+}
