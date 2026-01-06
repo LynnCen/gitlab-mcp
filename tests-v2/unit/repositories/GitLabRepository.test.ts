@@ -48,7 +48,7 @@ describe('GitLabRepository', () => {
   let mockConfig: GitLabConfig;
   let mockGitlab: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mockConfig = {
       host: 'https://gitlab.com',
       token: 'test-token',
