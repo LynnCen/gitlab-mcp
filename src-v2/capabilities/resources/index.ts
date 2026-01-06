@@ -4,5 +4,6 @@
 
 export * from './types.js';
 export * from './Resource.js';
+export * from './StreamingResource.js';
 export * from './ResourceRegistry.js';
 
