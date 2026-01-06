@@ -1,6 +1,6 @@
 {
   "name": "gitlab-mcp-server",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "标准的GitLab MCP服务器，支持stdio传输和配置化的GitLab操作",
   "main": "dist/src/index.js",
   "type": "module",
