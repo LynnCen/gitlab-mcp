@@ -11,4 +11,5 @@ export * from './AuthenticationMiddleware.js';
 export * from './RateLimitMiddleware.js';
 export * from './CacheMiddleware.js';
 export * from './PerformanceMiddleware.js';
+export * from './SecurityMiddleware.js';
 
