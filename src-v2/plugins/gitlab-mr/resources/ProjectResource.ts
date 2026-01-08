@@ -15,7 +15,7 @@ import type { IProjectService } from '../../../services/ProjectService.js';
  * 实际使用时，ResourceRegistry 会通过 resolveUri 匹配 URI 模式
  */
 export class ProjectResource extends Resource {
-  readonly uri = 'gitlab://projects/';
+  readonly uri = 'gitlab://projects/{id}';
   readonly name = 'GitLab Project';
   readonly description = 'GitLab 项目信息';
   readonly mimeType = 'application/json';

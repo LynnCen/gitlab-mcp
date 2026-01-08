@@ -12,7 +12,7 @@ import type { IMergeRequestService } from '../../../services/MergeRequestService
  * MergeRequestChangesResource 实现
  */
 export class MergeRequestChangesResource extends Resource {
-  readonly uri = 'gitlab://projects/';
+  readonly uri = 'gitlab://projects/{id}/mrs/{iid}/changes';
   readonly name = 'GitLab Merge Request Changes';
   readonly description = 'GitLab 合并请求变更信息';
   readonly mimeType = 'application/json';

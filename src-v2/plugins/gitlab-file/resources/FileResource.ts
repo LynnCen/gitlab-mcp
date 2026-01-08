@@ -12,7 +12,7 @@ import type { IFileOperationService } from '../../../services/FileOperationServi
  * FileResource 实现
  */
 export class FileResource extends Resource {
-  readonly uri = 'gitlab://projects/';
+  readonly uri = 'gitlab://projects/{id}/files/{path}';
   readonly name = 'GitLab File';
   readonly description = 'GitLab 文件内容';
   readonly mimeType = 'text/plain';

@@ -39,7 +39,6 @@ export class GetMergeRequestTool extends Tool {
       projectPath: string;
       mergeRequestIid: number;
     };
-    const { projectPath, mergeRequestIid } = params;
 
     try {
       const mr = await this.mrService.getMergeRequest(projectPath, mergeRequestIid);
