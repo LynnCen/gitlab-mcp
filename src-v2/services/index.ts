@@ -2,11 +2,19 @@
  * Services 模块导出
  */
 
-export * from './MergeRequestService.js';
-export * from './FileOperationService.js';
-export * from './StreamingFileService.js';
-export * from './CodeReviewService.js';
-export * from './CodeReviewRuleEngine.js';
-export * from './ProjectService.js';
-export * from './types.js';
+export { MergeRequestService } from './MergeRequestService.js';
+export { FileOperationService } from './FileOperationService.js';
+export { StreamingFileService } from './StreamingFileService.js';
+export { CodeReviewService } from './CodeReviewService.js';
+export { CodeReviewRuleEngine } from './CodeReviewRuleEngine.js';
+export { ProjectService } from './ProjectService.js';
+export {
+  type MergeRequestChangesOptions,
+  type MergeRequestChangesResult,
+  type FileOperationOptions,
+  type IMergeRequestService,
+  type IFileOperationService,
+  type ICodeReviewService,
+  type IProjectService,
+} from './types.js';
 

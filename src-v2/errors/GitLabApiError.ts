@@ -4,7 +4,8 @@
  * 用于表示 GitLab API 调用相关的错误
  */
 
-import { SystemError, type ErrorDetails } from './SystemError.js';
+import { SystemError } from './SystemError.js';
+import type { ErrorDetails } from './BaseError.js';
 
 /**
  * GitLab API 错误类

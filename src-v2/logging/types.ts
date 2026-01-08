@@ -44,3 +44,16 @@ export interface LoggerConfig {
   baseContext?: LogContext;
 }
 
+/**
+ * 日志记录器接口（类型别名）
+ */
+export interface ILogger {
+  trace(message: string, context?: Record<string, unknown>): void;
+  debug(message: string, context?: Record<string, unknown>): void;
+  info(message: string, context?: Record<string, unknown>): void;
+  warn(message: string, context?: Record<string, unknown>): void;
+  error(message: string, context?: Record<string, unknown>): void;
+  fatal(message: string, context?: Record<string, unknown>): void;
+  child?(context: Record<string, unknown>): ILogger;
+}
+

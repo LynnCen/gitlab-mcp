@@ -7,6 +7,16 @@ import type {
   GitLabMergeRequestChanges,
   GitLabFile,
 } from '../repositories/types.js';
+import type { MergeRequestService } from './MergeRequestService.js';
+import type { FileOperationService } from './FileOperationService.js';
+import type { CodeReviewService } from './CodeReviewService.js';
+import type { ProjectService } from './ProjectService.js';
+
+// 服务接口类型别名
+export type IMergeRequestService = MergeRequestService;
+export type IFileOperationService = FileOperationService;
+export type ICodeReviewService = CodeReviewService;
+export type IProjectService = ProjectService;
 
 /**
  * 合并请求变更选项
