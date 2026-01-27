@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * 工具注册逻辑
  * 
@@ -34,7 +33,6 @@ import { MergeRequestChangesResource } from '../plugins/gitlab-mr/resources/Merg
 
 // 文件资源
 import { FileResource } from '../plugins/gitlab-file/resources/FileResource.js';
-import { StreamingFileResource } from '../plugins/gitlab-file/resources/StreamingFileResource.js';
 
 // 代码审查资源
 import { CodeReviewRulesResource } from '../plugins/gitlab-code-review/resources/CodeReviewRulesResource.js';
@@ -73,7 +71,7 @@ export function registerAllTools(
   // 注册代码审查工具
   toolRegistry.registerTool(new AnalyzeMRChangesTool(services.codeReviewService as any) as any);
   toolRegistry.registerTool(new PushCodeReviewCommentsTool(services.codeReviewService as any) as any);
-  toolRegistry.registerTool(new GetFileCodeReviewRulesTool(services.codeReviewService as any) as any);
+  toolRegistry.registerTool(new GetFileCodeReviewRulesTool() as any);
 }
 
 /**
@@ -94,7 +92,7 @@ export function registerAllResources(
   // resourceRegistry.registerResource(new StreamingFileResource(services.fileService as any) as any);
 
   // 注册代码审查资源
-  resourceRegistry.registerResource(new CodeReviewRulesResource(services.codeReviewService as any) as any);
+  resourceRegistry.registerResource(new CodeReviewRulesResource() as any);
 }
 
 /**
@@ -102,10 +100,10 @@ export function registerAllResources(
  */
 export function registerAllPrompts(
   promptRegistry: PromptRegistry,
-  _services: ServiceDependencies
+  services: ServiceDependencies
 ): void {
   // 注册 MR 提示
-  promptRegistry.registerPrompt(new MRDescriptionPrompt() as any);
+  promptRegistry.registerPrompt(new MRDescriptionPrompt(services.mrService as any) as any);
 
   // 注册代码审查提示
   promptRegistry.registerPrompt(new CodeReviewTypeScriptPrompt() as any);
