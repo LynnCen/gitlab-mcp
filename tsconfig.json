@@ -6,11 +6,19 @@
     "lib": ["ES2022"],
     "declaration": true,
     "outDir": "./dist",
+    "rootDir": "./",
+    "baseUrl": ".",
+    
     "strict": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noImplicitReturns": false,
     "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": false,
+    "strictPropertyInitialization": false,
+    "noImplicitThis": false,
+    
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
@@ -18,16 +26,33 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": false,
+    
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    
+    "paths": {
+      "@/*": ["src/*"],
+      "@core/*": ["src/core/*"],
+      "@transport/*": ["src/transport/*"],
+      "@capabilities/*": ["src/capabilities/*"],
+      "@services/*": ["src/services/*"],
+      "@repositories/*": ["src/repositories/*"],
+      "@plugins/*": ["src/plugins/*"],
+      "@config/*": ["src/config/*"],
+      "@logging/*": ["src/logging/*"],
+      "@errors/*": ["src/errors/*"],
+      "@cache/*": ["src/cache/*"],
+      "@utils/*": ["src/utils/*"]
+    },
+    
     "types": ["node"]
   },
   "include": [
-    "src/**/*",
-    "tests/**/*",
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "tests"
   ]
-} 
+}
