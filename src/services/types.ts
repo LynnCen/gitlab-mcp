@@ -2,11 +2,7 @@
  * 业务服务层类型定义
  */
 
-import type {
-  GitLabMergeRequest,
-  GitLabMergeRequestChanges,
-  GitLabFile,
-} from '../repositories/types.js';
+import type { GitLabMergeRequestChanges } from '../repositories/types.js';
 import type { MergeRequestService } from './MergeRequestService.js';
 import type { FileOperationService } from './FileOperationService.js';
 import type { CodeReviewService } from './CodeReviewService.js';

@@ -37,16 +37,24 @@ export interface ExecutionContext {
 }
 
 /**
+ * 工具结果内容项
+ */
+export interface ToolResultContent {
+  type: 'text' | 'image' | 'resource';
+  text?: string;
+  data?: string;
+  uri?: string;
+  mimeType?: string;
+  [key: string]: unknown;
+}
+
+/**
  * 工具结果
  */
 export interface ToolResult {
-  content: Array<{
-    type: 'text' | 'image' | 'resource';
-    text?: string;
-    data?: string;
-    uri?: string;
-  }>;
+  content: ToolResultContent[];
   isError?: boolean;
+  [key: string]: unknown;
 }
 
 /**

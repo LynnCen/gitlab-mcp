@@ -9,15 +9,16 @@
     "rootDir": "./",
     "baseUrl": ".",
     
+    // 类型检查 - 逐步启用
     "strict": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noImplicitReturns": false,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "strictNullChecks": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": false,
+    "noImplicitReturns": true,
     "strictFunctionTypes": false,
     "strictPropertyInitialization": false,
-    "noImplicitThis": false,
+    "noImplicitThis": true,
     
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,

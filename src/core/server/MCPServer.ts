@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * MCP Server 核心实现
  * 
@@ -18,7 +17,8 @@ import {
 import type { ToolRegistry } from '../../capabilities/tools/ToolRegistry.js';
 import type { ResourceRegistry } from '../../capabilities/resources/ResourceRegistry.js';
 import type { PromptRegistry } from '../../capabilities/prompts/PromptRegistry.js';
-import type { PinoLogger } from '../../logging/PinoLogger.js';
+import type { ILogger } from '../../logging/types.js';
+import type { ExecutionContext } from '../../capabilities/tools/types.js';
 
 /**
  * MCP Server 配置
@@ -26,7 +26,7 @@ import type { PinoLogger } from '../../logging/PinoLogger.js';
 export interface MCPServerConfig {
   name: string;
   version: string;
-  logger?: PinoLogger;
+  logger?: ILogger;
 }
 
 /**
@@ -37,7 +37,7 @@ export class MCPServer {
   private toolRegistry: ToolRegistry;
   private resourceRegistry: ResourceRegistry;
   private promptRegistry: PromptRegistry;
-  private logger?: PinoLogger;
+  private logger?: ILogger;
 
   constructor(
     config: MCPServerConfig,
@@ -70,6 +70,18 @@ export class MCPServer {
   }
 
   /**
+   * 创建执行上下文
+   */
+  private createExecutionContext(): ExecutionContext {
+    return {
+      traceId: `trace-${Date.now()}`,
+      requestId: `req-${Date.now()}`,
+      startTime: Date.now(),
+      metadata: new Map(),
+    };
+  }
+
+  /**
    * 设置所有 MCP 请求处理器
    */
   private setupHandlers(): void {
@@ -97,9 +109,11 @@ export class MCPServer {
       }
 
       try {
-        const result = await tool.execute(request.params.arguments || {}, {} as any);
+        const context = this.createExecutionContext();
+        const args = request.params.arguments || {};
+        const result = await tool.execute(args, context);
         this.logger?.info('Tool executed successfully', { tool: toolName });
-        return result as any;
+        return result;
       } catch (error) {
         this.logger?.error('Tool execution failed', {
           tool: toolName,
@@ -169,9 +183,15 @@ export class MCPServer {
       }
 
       try {
-        const result = await prompt.render(request.params.arguments || {});
+        const args = request.params.arguments || {};
+        const result = await prompt.render(args);
         this.logger?.info('Prompt rendered successfully', { prompt: promptName });
-        return result as any;
+        return {
+          messages: [{
+            role: 'user' as const,
+            content: { type: 'text' as const, text: result },
+          }],
+        };
       } catch (error) {
         this.logger?.error('Prompt rendering failed', {
           prompt: promptName,

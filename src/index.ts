@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// @ts-nocheck
 
 /**
  * GitLab MCP Server v2.0
@@ -19,22 +18,23 @@ import { MergeRequestService } from './services/MergeRequestService.js';
 import { FileOperationService } from './services/FileOperationService.js';
 import { CodeReviewService } from './services/CodeReviewService.js';
 import { ProjectService } from './services/ProjectService.js';
-import { CodeReviewRuleEngine } from './services/CodeReviewRuleEngine.js';
 import { MemoryCacheProvider } from './cache/MemoryCacheProvider.js';
-import { registerAllTools, registerAllResources, registerAllPrompts } from './bootstrap/registerTools.js';
+import { registerAllTools, registerAllResources, registerAllPrompts, type ServiceDependencies } from './bootstrap/registerTools.js';
+import type { LogLevel } from './logging/types.js';
 
 /**
  * 初始化所有服务
  */
-function initializeServices() {
+function initializeServices(): { logger: PinoLogger; services: ServiceDependencies } {
   // 1. 初始化配置
   const configManager = new ConfigManager();
   const config = configManager.getConfig();
   const gitlabConfig = config.gitlab;
 
   // 2. 初始化日志
+  const logLevel = (process.env.LOG_LEVEL || 'info') as LogLevel;
   const logger = new PinoLogger({
-    level: (process.env.LOG_LEVEL || 'info') as any,
+    level: logLevel,
   });
 
   // 3. 初始化缓存
@@ -45,20 +45,13 @@ function initializeServices() {
   const cacheRepository = new CacheRepository(cacheProvider);
 
   // 4. 初始化 GitLab Repository
-  const gitlabRepository = new GitLabRepository(gitlabConfig, logger as any, cacheRepository);
+  const gitlabRepository = new GitLabRepository(gitlabConfig, logger);
 
   // 5. 初始化服务层
-  const mrService = new MergeRequestService(gitlabRepository, cacheRepository, logger as any);
-  const fileService = new FileOperationService(gitlabRepository, cacheRepository, logger as any);
-  const projectService = new ProjectService(gitlabRepository, cacheRepository, logger as any);
-  
-  const ruleEngine = new CodeReviewRuleEngine();
-  const codeReviewService = new CodeReviewService(
-    mrService,
-    fileService,
-    ruleEngine,
-    logger as any
-  );
+  const mrService = new MergeRequestService(gitlabRepository, cacheRepository, logger);
+  const projectService = new ProjectService(gitlabRepository, cacheRepository, logger);
+  const fileService = new FileOperationService(gitlabRepository, cacheRepository, mrService, logger);
+  const codeReviewService = new CodeReviewService(gitlabRepository, mrService, logger);
 
   return {
     logger,

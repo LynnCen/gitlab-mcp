@@ -3,6 +3,20 @@
  */
 
 /**
+ * GitLab 用户信息
+ */
+export interface GitLabUser {
+  id: number;
+  username: string;
+  name: string;
+  email?: string;
+  avatar_url?: string;
+  web_url?: string;
+  state?: string;
+  [key: string]: unknown;
+}
+
+/**
  * GitLab 项目信息
  */
 export interface GitLabProject {
@@ -13,7 +27,7 @@ export interface GitLabProject {
   description?: string;
   default_branch?: string;
   web_url: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -28,10 +42,11 @@ export interface GitLabMergeRequest {
   merged_at?: string;
   created_at: string;
   updated_at: string;
-  author: any;
+  author: GitLabUser;
   source_branch: string;
   target_branch: string;
-  [key: string]: any;
+  web_url?: string;
+  [key: string]: unknown;
 }
 
 /**
@@ -48,7 +63,7 @@ export interface GitLabMergeRequestChanges {
     renamed_file: boolean;
     deleted_file: boolean;
   }>;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -64,7 +79,7 @@ export interface GitLabFile {
   ref: string;
   blob_id: string;
   commit_id: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -73,10 +88,10 @@ export interface GitLabFile {
 export interface GitLabNote {
   id: number;
   body: string;
-  author: any;
+  author: GitLabUser;
   created_at: string;
   updated_at: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -85,7 +100,7 @@ export interface GitLabNote {
 export interface GitLabDiscussion {
   id: string;
   notes: GitLabNote[];
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -102,7 +117,7 @@ export interface GitLabCommit {
   committer_name: string;
   committer_email: string;
   committed_date: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -114,7 +129,7 @@ export interface GitLabMRVersion {
   base_commit_sha: string;
   start_commit_sha: string;
   created_at: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -129,6 +144,6 @@ export interface GitLabPosition {
   position_type: 'text' | 'image';
   new_line?: number;
   old_line?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 

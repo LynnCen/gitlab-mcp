@@ -29,7 +29,7 @@ export class GetMergeRequestTool extends Tool {
 
   constructor(
     private mrService: IMergeRequestService,
-    private projectService: IProjectService
+    _projectService: IProjectService  // 预留用于未来扩展
   ) {
     super();
   }

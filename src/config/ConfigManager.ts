@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * 配置管理器
  */
@@ -58,7 +57,7 @@ const MiddlewareConfigSchema = z.object({
 /**
  * 插件配置 Schema
  */
-const PluginsConfigSchema = z.record(z.any());
+const PluginsConfigSchema = z.record(z.unknown());
 
 /**
  * 完整配置 Schema
@@ -69,6 +68,11 @@ const AppConfigSchema = z.object({
   middleware: MiddlewareConfigSchema.optional(),
   plugins: PluginsConfigSchema.optional(),
 });
+
+/** 
+ * Zod 推断的配置类型 
+ */
+type ZodAppConfig = z.infer<typeof AppConfigSchema>;
 
 /**
  * 配置管理器
@@ -86,38 +90,38 @@ export class ConfigManager {
    * 加载配置
    */
   private load(): AppConfig {
-    const rawConfig: AppConfig = {
+    const rawConfig = {
       gitlab: {
-        host: this.provider.get('GITLAB_HOST', ''),
-        token: this.provider.get('GITLAB_TOKEN', ''),
-        timeout: this.provider.get('GITLAB_TIMEOUT', 30000),
-        retries: this.provider.get('GITLAB_RETRIES', 3),
+        host: this.provider.get<string>('GITLAB_HOST', ''),
+        token: this.provider.get<string>('GITLAB_TOKEN', ''),
+        timeout: this.provider.get<number>('GITLAB_TIMEOUT', 30000),
+        retries: this.provider.get<number>('GITLAB_RETRIES', 3),
       },
       server: {
-        port: this.provider.get('SERVER_PORT', 3000),
-        host: this.provider.get('SERVER_HOST', '0.0.0.0'),
-        logLevel: this.provider.get('LOG_LEVEL', 'info'),
-        logOutput: this.provider.get('LOG_OUTPUT', 'console'),
+        port: this.provider.get<number>('SERVER_PORT', 3000),
+        host: this.provider.get<string>('SERVER_HOST', '0.0.0.0'),
+        logLevel: this.provider.get<string>('LOG_LEVEL', 'info') as ServerConfig['logLevel'],
+        logOutput: this.provider.get<string>('LOG_OUTPUT', 'console') as ServerConfig['logOutput'],
       },
       middleware: {
         auth: {
-          enabled: this.provider.get('AUTH_ENABLED', false),
-          mode: this.provider.get('AUTH_MODE', 'api-key'),
-          apiKey: this.provider.get('API_KEY'),
+          enabled: this.provider.get<boolean>('AUTH_ENABLED', false),
+          mode: this.provider.get<string>('AUTH_MODE', 'api-key') as 'api-key' | 'jwt' | 'oauth',
+          apiKey: this.provider.get<string | undefined>('API_KEY', undefined),
         },
         rateLimit: {
-          enabled: this.provider.get('RATE_LIMIT_ENABLED', true),
-          globalRequests: this.provider.get('RATE_LIMIT_GLOBAL_REQUESTS', 100),
-          globalWindow: this.provider.get('RATE_LIMIT_GLOBAL_WINDOW', '1s'),
+          enabled: this.provider.get<boolean>('RATE_LIMIT_ENABLED', true),
+          globalRequests: this.provider.get<number>('RATE_LIMIT_GLOBAL_REQUESTS', 100),
+          globalWindow: this.provider.get<string>('RATE_LIMIT_GLOBAL_WINDOW', '1s'),
         },
         cache: {
-          enabled: this.provider.get('CACHE_ENABLED', true),
-          type: this.provider.get('CACHE_TYPE', 'memory'),
-          ttl: this.provider.get('CACHE_TTL', 300),
+          enabled: this.provider.get<boolean>('CACHE_ENABLED', true),
+          type: this.provider.get<string>('CACHE_TYPE', 'memory') as 'memory' | 'redis',
+          ttl: this.provider.get<number>('CACHE_TTL', 300),
         },
       },
       plugins: {
-        enabled: this.provider.get('PLUGINS_ENABLED', '').split(',').filter(Boolean),
+        enabled: this.provider.get<string>('PLUGINS_ENABLED', '').split(',').filter(Boolean),
       },
     };
 
@@ -127,7 +131,14 @@ export class ConfigManager {
       throw new Error(`Configuration validation failed: ${result.error.message}`);
     }
 
-    return result.data;
+    // 转换为 AppConfig 类型
+    const validatedConfig = result.data as ZodAppConfig;
+    return {
+      gitlab: validatedConfig.gitlab,
+      server: validatedConfig.server || {},
+      middleware: validatedConfig.middleware || {},
+      plugins: validatedConfig.plugins || {},
+    } as AppConfig;
   }
 
   /**
@@ -148,21 +159,21 @@ export class ConfigManager {
    * 获取服务器配置
    */
   getServerConfig(): ServerConfig {
-    return { ...this.config.server };
+    return { ...(this.config.server || {}) };
   }
 
   /**
    * 获取中间件配置
    */
   getMiddlewareConfig(): MiddlewareConfig {
-    return { ...this.config.middleware };
+    return { ...(this.config.middleware || {}) };
   }
 
   /**
    * 获取插件配置
    */
   getPluginsConfig(): PluginsConfig {
-    return { ...this.config.plugins };
+    return { ...(this.config.plugins || {}) };
   }
 
   /**

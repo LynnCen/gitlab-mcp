@@ -7,10 +7,10 @@
 import type { ToolRegistry } from '../capabilities/tools/ToolRegistry.js';
 import type { ResourceRegistry } from '../capabilities/resources/ResourceRegistry.js';
 import type { PromptRegistry } from '../capabilities/prompts/PromptRegistry.js';
-import type { IMergeRequestService } from '../services/types.js';
-import type { IFileOperationService } from '../services/types.js';
-import type { ICodeReviewService } from '../services/types.js';
-import type { IProjectService } from '../services/types.js';
+import type { IMergeRequestService } from '../services/MergeRequestService.js';
+import type { IFileOperationService } from '../services/FileOperationService.js';
+import type { ICodeReviewService } from '../services/CodeReviewService.js';
+import type { IProjectService } from '../services/ProjectService.js';
 
 // MR 工具
 import { GetMergeRequestTool } from '../plugins/gitlab-mr/tools/GetMergeRequestTool.js';
@@ -60,18 +60,18 @@ export function registerAllTools(
   services: ServiceDependencies
 ): void {
   // 注册 MR 工具
-  toolRegistry.registerTool(new GetMergeRequestTool(services.mrService as any, services.projectService as any) as any);
-  toolRegistry.registerTool(new GetMergeRequestChangesTool(services.mrService as any) as any);
-  toolRegistry.registerTool(new ListMergeRequestsTool(services.mrService as any) as any);
-  toolRegistry.registerTool(new UpdateMergeRequestDescriptionTool(services.mrService as any) as any);
+  toolRegistry.registerTool(new GetMergeRequestTool(services.mrService, services.projectService));
+  toolRegistry.registerTool(new GetMergeRequestChangesTool(services.mrService));
+  toolRegistry.registerTool(new ListMergeRequestsTool(services.mrService));
+  toolRegistry.registerTool(new UpdateMergeRequestDescriptionTool(services.mrService));
 
   // 注册文件工具
-  toolRegistry.registerTool(new GetFileContentTool(services.fileService as any) as any);
+  toolRegistry.registerTool(new GetFileContentTool(services.fileService));
 
   // 注册代码审查工具
-  toolRegistry.registerTool(new AnalyzeMRChangesTool(services.codeReviewService as any) as any);
-  toolRegistry.registerTool(new PushCodeReviewCommentsTool(services.codeReviewService as any) as any);
-  toolRegistry.registerTool(new GetFileCodeReviewRulesTool() as any);
+  toolRegistry.registerTool(new AnalyzeMRChangesTool(services.codeReviewService));
+  toolRegistry.registerTool(new PushCodeReviewCommentsTool(services.codeReviewService));
+  toolRegistry.registerTool(new GetFileCodeReviewRulesTool());
 }
 
 /**
@@ -82,17 +82,15 @@ export function registerAllResources(
   services: ServiceDependencies
 ): void {
   // 注册 MR 资源
-  resourceRegistry.registerResource(new ProjectResource(services.projectService as any) as any);
-  resourceRegistry.registerResource(new MergeRequestResource(services.mrService as any) as any);
-  resourceRegistry.registerResource(new MergeRequestChangesResource(services.mrService as any) as any);
+  resourceRegistry.registerResource(new ProjectResource(services.projectService));
+  resourceRegistry.registerResource(new MergeRequestResource(services.mrService));
+  resourceRegistry.registerResource(new MergeRequestChangesResource(services.mrService));
 
   // 注册文件资源
-  resourceRegistry.registerResource(new FileResource(services.fileService as any) as any);
-  // StreamingFileResource 暂时禁用，因为构造函数需要 URI 参数
-  // resourceRegistry.registerResource(new StreamingFileResource(services.fileService as any) as any);
+  resourceRegistry.registerResource(new FileResource(services.fileService));
 
   // 注册代码审查资源
-  resourceRegistry.registerResource(new CodeReviewRulesResource() as any);
+  resourceRegistry.registerResource(new CodeReviewRulesResource());
 }
 
 /**
@@ -103,10 +101,10 @@ export function registerAllPrompts(
   services: ServiceDependencies
 ): void {
   // 注册 MR 提示
-  promptRegistry.registerPrompt(new MRDescriptionPrompt(services.mrService as any) as any);
+  promptRegistry.registerPrompt(new MRDescriptionPrompt(services.mrService));
 
   // 注册代码审查提示
-  promptRegistry.registerPrompt(new CodeReviewTypeScriptPrompt() as any);
-  promptRegistry.registerPrompt(new CodeReviewVuePrompt() as any);
+  promptRegistry.registerPrompt(new CodeReviewTypeScriptPrompt());
+  promptRegistry.registerPrompt(new CodeReviewVuePrompt());
 }
 

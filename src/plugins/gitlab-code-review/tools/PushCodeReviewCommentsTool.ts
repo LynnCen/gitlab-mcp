@@ -61,18 +61,33 @@ export class PushCodeReviewCommentsTool extends Tool {
     super();
   }
 
-  async execute(params: any, context: ExecutionContext): Promise<ToolResult> {
+  async execute(params: unknown, _context: ExecutionContext): Promise<ToolResult> {
     const {
       projectPath,
       mergeRequestIid,
       reviewComments,
       summaryComment,
-      commentStyle = 'detailed',
-    } = params;
+      // commentStyle 预留用于未来功能扩展
+    } = params as {
+      projectPath: string;
+      mergeRequestIid: number;
+      reviewComments: Array<{
+        filePath: string;
+        lineNumber?: number;
+        severity: 'critical' | 'warning' | 'suggestion';
+        title: string;
+        description: string;
+        suggestion: string;
+        category?: string;
+        autoFixable?: boolean;
+      }>;
+      summaryComment?: string;
+      commentStyle?: string;
+    };
 
     try {
       // 转换评论格式
-      const results = reviewComments.map((comment) => ({
+      const results = reviewComments.map((comment: typeof reviewComments[number]) => ({
         filePath: comment.filePath,
         issues: [
           {

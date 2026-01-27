@@ -131,7 +131,7 @@ ${allFiles.map((file: any) => {
 
 - **源分支**: \`${mr.source_branch}\`
 - **目标分支**: \`${mr.target_branch}\`
-- **作者**: ${(mr.author as any)?.username || 'Unknown'}
+- **作者**: ${mr.author?.username || 'Unknown'}
 
 ### 📝 说明
 

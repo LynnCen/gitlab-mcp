@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * GitLab Repository
  * 
@@ -21,6 +20,7 @@ import type {
   GitLabCommit,
   GitLabMRVersion,
   GitLabPosition,
+  GitLabUser,
 } from './types.js';
 
 /**
@@ -30,12 +30,12 @@ export interface IGitLabRepository {
   /**
    * 测试连接
    */
-  testConnection(): Promise<{ success: boolean; user?: any; error?: string }>;
+  testConnection(): Promise<{ success: boolean; user?: GitLabUser; error?: string }>;
 
   /**
    * 获取当前用户信息
    */
-  getCurrentUser(): Promise<any>;
+  getCurrentUser(): Promise<GitLabUser>;
 
   /**
    * 获取项目信息
@@ -124,6 +124,20 @@ export interface IGitLabRepository {
 }
 
 /**
+ * API 错误类型
+ */
+interface ApiError extends Error {
+  response?: {
+    status?: number;
+    data?: { message?: string };
+  };
+  statusCode?: number;
+  status?: number;
+  config?: { url?: string };
+  request?: { path?: string };
+}
+
+/**
  * GitLab Repository 实现
  */
 export class GitLabRepository implements IGitLabRepository {
@@ -137,7 +151,6 @@ export class GitLabRepository implements IGitLabRepository {
     this.gitlab = new Gitlab({
       host: config.host,
       token: config.token,
-      requestTimeout: config.timeout || 30000,
     });
   }
 
@@ -158,7 +171,7 @@ export class GitLabRepository implements IGitLabRepository {
 
         // 如果是 4xx 错误，不重试
         if (this.isClientError(error)) {
-          throw this.convertError(error, operation.name);
+          throw this.convertError(error as ApiError, 'operation');
         }
 
         // 最后一次尝试失败，抛出错误
@@ -170,34 +183,35 @@ export class GitLabRepository implements IGitLabRepository {
         const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
         this.logger?.warn(
           `GitLab API call failed, retrying in ${delay}ms (attempt ${attempt + 1}/${retries + 1})`,
-          { error: lastError.message, operation: operation.name }
+          { error: lastError.message }
         );
 
         await this.sleep(delay);
       }
     }
 
-    throw this.convertError(lastError!, operation.name);
+    throw this.convertError(lastError as ApiError, 'operation');
   }
 
   /**
    * 判断是否为客户端错误（4xx）
    */
-  private isClientError(error: any): boolean {
-    const statusCode = error?.response?.status || error?.statusCode || error?.status;
-    return statusCode >= 400 && statusCode < 500;
+  private isClientError(error: unknown): boolean {
+    const apiError = error as ApiError;
+    const statusCode = apiError?.response?.status || apiError?.statusCode || apiError?.status;
+    return typeof statusCode === 'number' && statusCode >= 400 && statusCode < 500;
   }
 
   /**
    * 转换错误为 GitLabApiError
    */
-  private convertError(error: any, operation: string): GitLabApiError {
+  private convertError(error: ApiError | null, operation: string): GitLabApiError {
     const statusCode = error?.response?.status || error?.statusCode || error?.status;
     const message = error?.response?.data?.message || error?.message || String(error);
     const apiEndpoint = error?.config?.url || error?.request?.path || operation;
 
     // 根据状态码确定错误码
-    let errorCode = ErrorCodes.GITLAB_API_ERROR;
+    let errorCode: string = ErrorCodes.GITLAB_API_ERROR;
     if (statusCode === 401) {
       errorCode = ErrorCodes.GITLAB_AUTH_FAILED;
     } else if (statusCode === 403) {
@@ -225,7 +239,7 @@ export class GitLabRepository implements IGitLabRepository {
   /**
    * 测试连接
    */
-  async testConnection(): Promise<{ success: boolean; user?: any; error?: string }> {
+  async testConnection(): Promise<{ success: boolean; user?: GitLabUser; error?: string }> {
     try {
       const user = await this.getCurrentUser();
       return { success: true, user };
@@ -240,19 +254,19 @@ export class GitLabRepository implements IGitLabRepository {
   /**
    * 获取当前用户信息
    */
-  async getCurrentUser(): Promise<any> {
-    return await this.withRetry(async () => {
-      const response = await this.gitlab.requester.get('user');
-      return response;
+  async getCurrentUser(): Promise<GitLabUser> {
+    const response = await this.withRetry(async () => {
+      return await this.gitlab.requester.get('user');
     });
+    return response as unknown as GitLabUser;
   }
 
   /**
    * 获取项目信息
    */
   async getProject(projectId: string | number): Promise<GitLabProject> {
-    const result: any = await this.withRetry(() => this.gitlab.Projects.show(projectId));
-    return result;
+    const result = await this.withRetry(() => this.gitlab.Projects.show(projectId));
+    return result as unknown as GitLabProject;
   }
 
   /**
@@ -262,7 +276,10 @@ export class GitLabRepository implements IGitLabRepository {
     projectId: string | number,
     mrIid: number
   ): Promise<GitLabMergeRequest> {
-    return await this.withRetry(() => this.gitlab.MergeRequests.show(projectId, mrIid));
+    const result = await this.withRetry(() => 
+      this.gitlab.MergeRequests.show(projectId, mrIid)
+    );
+    return result as unknown as GitLabMergeRequest;
   }
 
   /**
@@ -272,11 +289,12 @@ export class GitLabRepository implements IGitLabRepository {
     projectId: string | number,
     mrIid: number
   ): Promise<GitLabMergeRequestChanges> {
-    return await this.withRetry(() =>
+    const result = await this.withRetry(() =>
       this.gitlab.MergeRequests.showChanges(projectId, mrIid, {
         accessRawDiffs: true,
       })
     );
+    return result as unknown as GitLabMergeRequestChanges;
   }
 
   /**
@@ -286,9 +304,10 @@ export class GitLabRepository implements IGitLabRepository {
     projectId: string | number,
     mrIid: number
   ): Promise<GitLabMRVersion[]> {
-    return await this.withRetry(() =>
-      this.gitlab.MergeRequestVersions.all(projectId, mrIid)
+    const result = await this.withRetry(() =>
+      this.gitlab.MergeRequests.allDiffs(projectId, mrIid)
     );
+    return result as unknown as GitLabMRVersion[];
   }
 
   /**
@@ -298,9 +317,10 @@ export class GitLabRepository implements IGitLabRepository {
     projectId: string | number,
     mrIid: number
   ): Promise<GitLabCommit[]> {
-    return await this.withRetry(() =>
-      this.gitlab.MergeRequests.commits(projectId, mrIid)
+    const result = await this.withRetry(() =>
+      this.gitlab.MergeRequests.allCommits(projectId, mrIid)
     );
+    return result as unknown as GitLabCommit[];
   }
 
   /**
@@ -311,11 +331,12 @@ export class GitLabRepository implements IGitLabRepository {
     mrIid: number,
     description: string
   ): Promise<GitLabMergeRequest> {
-    return await this.withRetry(() =>
+    const result = await this.withRetry(() =>
       this.gitlab.MergeRequests.edit(projectId, mrIid, {
         description,
       })
     );
+    return result as unknown as GitLabMergeRequest;
   }
 
   /**
@@ -326,9 +347,10 @@ export class GitLabRepository implements IGitLabRepository {
     filePath: string,
     ref: string = 'main'
   ): Promise<GitLabFile> {
-    return await this.withRetry(() =>
+    const result = await this.withRetry(() =>
       this.gitlab.RepositoryFiles.show(projectId, filePath, ref)
     );
+    return result as unknown as GitLabFile;
   }
 
   /**
@@ -339,9 +361,10 @@ export class GitLabRepository implements IGitLabRepository {
     mrIid: number,
     body: string
   ): Promise<GitLabNote> {
-    return await this.withRetry(() =>
+    const result = await this.withRetry(() =>
       this.gitlab.MergeRequestNotes.create(projectId, mrIid, body)
     );
+    return result as unknown as GitLabNote;
   }
 
   /**
@@ -353,11 +376,32 @@ export class GitLabRepository implements IGitLabRepository {
     body: string,
     position?: GitLabPosition
   ): Promise<GitLabDiscussion> {
-    return await this.withRetry(() =>
-      this.gitlab.MergeRequestDiscussions.create(projectId, mrIid, body, {
-        position,
-      })
-    );
+    const result = await this.withRetry(() => {
+      if (position) {
+        // 使用 Gitbeaker 的格式，需要 camelCase
+        // 类型系统不完全匹配，使用 unknown 转换
+        const positionOptions = {
+          position: {
+            baseSha: position.base_sha,
+            startSha: position.start_sha,
+            headSha: position.head_sha,
+            oldPath: position.old_path,
+            newPath: position.new_path,
+            positionType: position.position_type,
+            newLine: position.new_line,
+            oldLine: position.old_line,
+          },
+        } as unknown;
+        return this.gitlab.MergeRequestDiscussions.create(
+          projectId, 
+          mrIid, 
+          body, 
+          positionOptions as Parameters<typeof this.gitlab.MergeRequestDiscussions.create>[3]
+        );
+      }
+      return this.gitlab.MergeRequestDiscussions.create(projectId, mrIid, body);
+    });
+    return result as unknown as GitLabDiscussion;
   }
 
   /**
@@ -373,13 +417,21 @@ export class GitLabRepository implements IGitLabRepository {
       page?: number;
     }
   ): Promise<GitLabMergeRequest[]> {
-    const result: any = await this.withRetry(() =>
-      this.gitlab.MergeRequests.all({
-        projectId: String(projectId),
-        ...options,
-      } as any)
-    );
-    return result;
+    // 使用原始 API 请求，因为 Gitbeaker 的类型不匹配
+    const result = await this.withRetry(async () => {
+      const endpoint = `projects/${encodeURIComponent(String(projectId))}/merge_requests`;
+      const queryParams = new URLSearchParams();
+      if (options?.state) queryParams.set('state', options.state);
+      if (options?.order_by) queryParams.set('order_by', options.order_by);
+      if (options?.sort) queryParams.set('sort', options.sort);
+      if (options?.per_page) queryParams.set('per_page', String(options.per_page));
+      if (options?.page) queryParams.set('page', String(options.page));
+      
+      const url = queryParams.toString() ? `${endpoint}?${queryParams.toString()}` : endpoint;
+      const response = await this.gitlab.requester.get(url);
+      return response;
+    });
+    return result as unknown as GitLabMergeRequest[];
   }
 }
 

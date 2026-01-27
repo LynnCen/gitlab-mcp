@@ -228,8 +228,7 @@ export class CodeReviewService implements ICodeReviewService {
     let commentsFailed = 0;
     const errors: string[] = [];
 
-    // 获取 MR 信息以获取 SHA
-    const mr = await this.mrService.getMergeRequest(projectPath, mrIid);
+    // 获取 MR 变更
     const changes = await this.mrService.getMergeRequestChanges(
       projectPath,
       mrIid
