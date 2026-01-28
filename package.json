@@ -19,6 +19,11 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     
+    "test:mcp:ui": "npx @modelcontextprotocol/inspector --config mcp-inspector.json --server gitlab-mcp",
+    "test:mcp:list": "npx @modelcontextprotocol/inspector --cli node dist/src/index.js --method tools/list",
+    "test:mcp:resources": "npx @modelcontextprotocol/inspector --cli node dist/src/index.js --method resources/list",
+    "test:mcp:prompts": "npx @modelcontextprotocol/inspector --cli node dist/src/index.js --method prompts/list",
+    
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write \"src/**/*.{ts,json,md}\"",

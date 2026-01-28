@@ -1,6 +1,51 @@
 # GitLab MCP 测试指南
 
-本文档说明如何测试 `getMergeRequestChanges` 方法的修复效果。
+本文档说明如何测试 GitLab MCP Server 的功能。
+
+## 📚 测试方法
+
+### MCP Inspector 测试（推荐）
+
+使用官方的 MCP Inspector 工具进行交互式测试和调试：
+
+- **Web UI 模式**: 可视化界面，方便探索所有工具、资源和提示
+- **CLI 模式**: 命令行测试，适合自动化和脚本
+- **编程方式**: 集成到测试框架
+
+📖 **完整指南**: [MCP Inspector 测试文档](./docs/development/MCP-INSPECTOR-TESTING.md)
+
+**快速启动**:
+```bash
+# 安装 Inspector
+npm install -g @modelcontextprotocol/inspector
+
+# 启动 Web UI
+pnpm run test:mcp:ui
+
+# 或使用 CLI 列出所有工具
+pnpm run test:mcp:list
+```
+
+### 单元测试和集成测试
+
+使用 Vitest 运行单元测试和集成测试：
+
+```bash
+# 运行所有测试
+pnpm test
+
+# 查看测试覆盖率
+pnpm test:coverage
+
+# UI 模式
+pnpm test:ui
+```
+
+---
+
+## 功能测试
+
+以下是针对 `getMergeRequestChanges` 方法的具体功能测试说明。
 
 ## 快速开始
 

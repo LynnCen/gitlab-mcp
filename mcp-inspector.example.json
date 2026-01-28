@@ -1,0 +1,37 @@
+{
+  "mcpServers": {
+    "gitlab-mcp": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["dist/src/index.js"],
+      "env": {
+        "GITLAB_HOST": "https://gitlab.com",
+        "GITLAB_TOKEN": "your-gitlab-token-here",
+        "LOG_LEVEL": "info"
+      }
+    },
+    "gitlab-mcp-debug": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["dist/src/index.js"],
+      "env": {
+        "GITLAB_HOST": "https://gitlab.com",
+        "GITLAB_TOKEN": "your-gitlab-token-here",
+        "LOG_LEVEL": "debug",
+        "DEBUG": "*"
+      }
+    },
+    "gitlab-mcp-private": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["dist/src/index.js"],
+      "env": {
+        "GITLAB_HOST": "https://your-private-gitlab.com",
+        "GITLAB_TOKEN": "your-private-gitlab-token",
+        "LOG_LEVEL": "info",
+        "GITLAB_TIMEOUT": "60000",
+        "GITLAB_RETRIES": "5"
+      }
+    }
+  }
+}
