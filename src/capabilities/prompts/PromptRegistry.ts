@@ -38,6 +38,7 @@ export class PromptRegistry {
 
   /**
    * 列出所有提示
+   * 返回格式符合 MCP 规范
    */
   listPrompts(filter?: PromptFilter): PromptInfo[] {
     let prompts = Array.from(this.prompts.values());
@@ -57,7 +58,12 @@ export class PromptRegistry {
       name: prompt.name,
       description: prompt.description,
       version: prompt.version,
-      arguments: prompt.arguments,
+      // MCP 规范要求 arguments 只包含 name, description, required
+      arguments: prompt.arguments.map(arg => ({
+        name: arg.name,
+        description: arg.description,
+        required: arg.required,
+      })),
     }));
   }
 

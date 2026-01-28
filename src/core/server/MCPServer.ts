@@ -10,6 +10,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   ListResourcesRequestSchema,
+  ListResourceTemplatesRequestSchema,
   ReadResourceRequestSchema,
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
@@ -123,15 +124,37 @@ export class MCPServer {
       }
     });
 
-    // 资源列表请求
+    // 资源列表请求（静态资源）
     this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
       this.logger?.debug('Handling resources/list request');
       
-      const resources = this.resourceRegistry.listResources();
+      // 只返回静态资源（非模板 URI）
+      const allResources = this.resourceRegistry.listResources();
+      const staticResources = allResources.filter(r => !r.uri.includes('{'));
       
-      this.logger?.info('Resources listed', { count: resources.length });
+      this.logger?.info('Static resources listed', { count: staticResources.length });
       
-      return { resources };
+      return { resources: staticResources };
+    });
+
+    // 资源模板列表请求
+    this.server.setRequestHandler(ListResourceTemplatesRequestSchema, async () => {
+      this.logger?.debug('Handling resources/templates/list request');
+      
+      // 返回资源模板（包含模板参数的 URI）
+      const allResources = this.resourceRegistry.listResources();
+      const resourceTemplates = allResources
+        .filter(r => r.uri.includes('{'))
+        .map(r => ({
+          uriTemplate: r.uri,
+          name: r.name,
+          description: r.description,
+          mimeType: r.mimeType,
+        }));
+      
+      this.logger?.info('Resource templates listed', { count: resourceTemplates.length });
+      
+      return { resourceTemplates };
     });
 
     // 资源读取请求
@@ -139,7 +162,14 @@ export class MCPServer {
       const uri = request.params.uri;
       this.logger?.info('Handling resource read', { uri });
 
-      const resource = this.resourceRegistry.getResource(uri);
+      // 首先尝试直接匹配
+      let resource = this.resourceRegistry.getResource(uri);
+      
+      // 如果直接匹配失败，尝试模板匹配
+      if (!resource) {
+        resource = this.resourceRegistry.resolveUri(uri);
+      }
+      
       if (!resource) {
         const error = `Resource not found: ${uri}`;
         this.logger?.error(error);
@@ -147,6 +177,8 @@ export class MCPServer {
       }
 
       try {
+        // 设置实际请求的 URI 到 metadata
+        resource.setMetadata('actualUri', uri);
         const content = await resource.getContent();
         this.logger?.info('Resource read successfully', { uri });
         return { contents: [content] };

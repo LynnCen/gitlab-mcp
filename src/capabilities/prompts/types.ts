@@ -31,12 +31,21 @@ export interface PromptFilter {
 }
 
 /**
- * 提示信息
+ * MCP 规范的提示参数（用于列表返回）
+ */
+export interface MCPPromptArgument {
+  name: string;
+  description: string;
+  required: boolean;
+}
+
+/**
+ * 提示信息（符合 MCP 规范）
  */
 export interface PromptInfo {
   name: string;
   description: string;
   version: string;
-  arguments: PromptArgument[];
+  arguments: MCPPromptArgument[];
 }
 

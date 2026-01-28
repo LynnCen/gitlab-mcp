@@ -36,7 +36,7 @@ export interface IResource {
   /**
    * 资源元数据
    */
-  readonly metadata?: Record<string, any>;
+  readonly metadata?: Record<string, unknown>;
 
   /**
    * 是否可缓存
@@ -47,6 +47,11 @@ export interface IResource {
    * 是否可订阅
    */
   readonly subscribable: boolean;
+
+  /**
+   * 设置元数据
+   */
+  setMetadata(key: string, value: unknown): void;
 
   /**
    * 获取资源内容
@@ -68,9 +73,23 @@ export abstract class Resource implements IResource {
   abstract readonly description: string;
   abstract readonly mimeType: string;
   readonly size?: number;
-  readonly metadata?: Record<string, any>;
+  protected _metadata: Record<string, unknown> = {};
   abstract readonly cacheable: boolean;
   abstract readonly subscribable: boolean;
+
+  /**
+   * 获取元数据
+   */
+  get metadata(): Record<string, unknown> {
+    return this._metadata;
+  }
+
+  /**
+   * 设置元数据
+   */
+  setMetadata(key: string, value: unknown): void {
+    this._metadata[key] = value;
+  }
 
   abstract getContent(): Promise<ResourceContent>;
 }
