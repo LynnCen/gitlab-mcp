@@ -1,51 +1,119 @@
-# 文档目录
+# 📚 GitLab MCP 文档中心
 
-本文档目录包含项目重构相关的所有文档。
+欢迎来到 GitLab MCP 项目文档中心。本文档中心包含项目的所有技术文档和指南。
 
-## 文档结构
+## 📖 文档结构
 
 ```
 docs/
-├── README.md                    # 本文档
-├── api/                         # API 文档
-│   ├── tools/                   # 工具 API 文档
-│   ├── resources/               # 资源 API 文档
-│   └── prompts/                 # 提示 API 文档
-├── developers/                  # 开发者指南
-│   ├── plugin-development.md    # 插件开发指南
-│   └── contributing.md          # 贡献指南
-├── decisions/                   # 设计决策记录
-│   └── tech-stack.md            # 技术选型文档
-├── design/                      # 设计文档
-│   └── interfaces.md            # 核心接口设计
-└── benchmarks/                  # 性能基准
-    └── baseline.md              # 性能基准数据
+├── README.md                          # 本文档
+├── api-reference.md                   # API 参考文档
+├── migration-guide.md                 # 迁移指南
+├── release-notes-v2.0.0.md           # 版本发布说明
+├── api/                               # API 详细文档
+├── development/                       # 开发相关文档
+│   ├── README.md                      # 开发文档索引
+│   ├── architecture.md                # 架构设计
+│   ├── plugin-development-guide.md    # 插件开发指南
+│   ├── design/                        # 设计文档
+│   ├── decisions/                     # 技术决策
+│   ├── benchmarks/                    # 性能基准
+│   └── getting-started/               # 快速开始
+└── archive/                           # 历史文档归档
+    └── README.md                      # 归档说明
 ```
 
-## 文档说明
+## 🚀 快速导航
 
-### API 文档
-- **tools/**: 所有工具的详细 API 说明
-- **resources/**: 所有资源的 URI 规范和说明
-- **prompts/**: 所有提示模板的参数和使用说明
+### 用户文档
 
-### 开发者指南
-- **plugin-development.md**: 如何开发插件的详细教程
-- **contributing.md**: 如何贡献代码的流程说明
+| 文档 | 说明 |
+|------|------|
+| [项目 README](../README.md) | 项目概览和快速开始 |
+| [使用指南](../USAGE.md) | 详细的使用说明 |
+| [测试文档](../TESTING.md) | 测试指南 |
+| [API 参考](./api-reference.md) | 完整的 API 文档 |
+| [迁移指南](./migration-guide.md) | 从旧版本迁移 |
+| [发布说明](./release-notes-v2.0.0.md) | v2.0.0 版本说明 |
 
-### 设计决策
-- **tech-stack.md**: 技术选型的详细分析和决策过程
+### 开发文档
 
-### 设计文档
-- **interfaces.md**: 所有核心接口的详细定义
+| 文档 | 说明 |
+|------|------|
+| [开发指南](./development/README.md) | 开发文档索引 |
+| [架构设计](./development/architecture.md) | 系统架构说明 |
+| [插件开发](./development/plugin-development-guide.md) | 插件开发教程 |
+| [环境搭建](./development/getting-started/setup.md) | 开发环境设置 |
+| [技术决策](./development/decisions/tech-stack.md) | 技术选型记录 |
+| [接口设计](./development/design/interfaces.md) | 核心接口定义 |
+| [性能基准](./development/benchmarks/baseline.md) | 性能测试数据 |
 
-### 性能基准
-- **baseline.md**: 重构前的性能基准数据，用于对比
+### 其他资源
 
-## 文档更新原则
+| 资源 | 说明 |
+|------|------|
+| [变更日志](../CHANGELOG.md) | 版本变更记录 |
+| [历史文档](./archive/README.md) | 归档的历史文档 |
+| [许可证](../LICENSE) | 项目许可证 |
+
+## 📝 文档编写规范
+
+### 文件命名规范
+
+- 使用小写字母和连字符：`plugin-development-guide.md`
+- README 使用大写：`README.md`
+- 特殊文档使用大写：`USAGE.md`, `TESTING.md`, `CHANGELOG.md`
+
+### 文档结构规范
+
+1. **标题层级**: 文档标题使用 `#`，子标题使用 `##`，最多到 `####`
+2. **代码示例**: 使用三重反引号标注语言类型
+3. **链接**: 使用相对路径链接其他文档
+4. **表格**: 使用 Markdown 表格格式，保持对齐
+5. **图片**: 存放在 `docs/images/` 目录
+
+### 更新原则
 
 1. **同步更新**: 代码变更时同步更新相关文档
-2. **版本控制**: 重要设计决策记录版本和日期
-3. **示例代码**: 文档中包含可运行的示例代码
-4. **清晰易懂**: 使用图表和示例说明复杂概念
+2. **版本标注**: 重要变更记录版本号和日期
+3. **示例完整**: 提供可运行的完整示例
+4. **清晰准确**: 使用简洁明确的语言
 
+## 🔍 按主题查找
+
+### MCP 协议相关
+
+- [API 参考文档](./api-reference.md) - MCP 工具、资源、提示的完整 API
+- [架构设计](./development/architecture.md) - MCP 协议层实现
+- [插件开发](./development/plugin-development-guide.md) - 扩展 MCP 功能
+
+### GitLab 集成相关
+
+- [使用指南](../USAGE.md) - GitLab API 使用示例
+- [项目 README](../README.md) - GitLab Token 配置
+- [迁移指南](./migration-guide.md) - GitLab API 版本兼容
+
+### 开发和调试
+
+- [开发环境](./development/getting-started/setup.md) - 本地开发设置
+- [测试文档](../TESTING.md) - 单元测试和集成测试
+- [性能基准](./development/benchmarks/baseline.md) - 性能测试和优化
+
+### 架构和设计
+
+- [架构设计](./development/architecture.md) - 六层架构说明
+- [技术决策](./development/decisions/tech-stack.md) - 技术栈选型
+- [接口设计](./development/design/interfaces.md) - 核心接口定义
+
+## 📮 反馈和贡献
+
+如果您发现文档有误或需要改进，欢迎：
+
+1. 提交 Issue 报告问题
+2. 提交 PR 改进文档
+3. 在讨论区提出建议
+
+---
+
+**最后更新**: 2026-01-28  
+**文档版本**: v2.0.0
