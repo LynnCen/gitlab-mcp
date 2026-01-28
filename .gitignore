@@ -56,3 +56,5 @@ coverage/
 
 # Husky
 .husky/_/ 
+
+.pnpm-store/

@@ -19,7 +19,7 @@ export class PinoLogger implements ILogger {
       level = 'info',
       pretty = false,
       timestamp = true,
-      destination = 'stdout',
+      destination = 'stderr', // MCP 协议要求：日志必须输出到 stderr，stdout 仅用于 JSON-RPC 消息
       baseContext = {},
     } = config;
 

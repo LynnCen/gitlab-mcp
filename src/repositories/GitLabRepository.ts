@@ -417,21 +417,40 @@ export class GitLabRepository implements IGitLabRepository {
       page?: number;
     }
   ): Promise<GitLabMergeRequest[]> {
-    // 使用原始 API 请求，因为 Gitbeaker 的类型不匹配
+    // 使用 Gitbeaker 的 MergeRequests.all 方法
     const result = await this.withRetry(async () => {
-      const endpoint = `projects/${encodeURIComponent(String(projectId))}/merge_requests`;
-      const queryParams = new URLSearchParams();
-      if (options?.state) queryParams.set('state', options.state);
-      if (options?.order_by) queryParams.set('order_by', options.order_by);
-      if (options?.sort) queryParams.set('sort', options.sort);
-      if (options?.per_page) queryParams.set('per_page', String(options.per_page));
-      if (options?.page) queryParams.set('page', String(options.page));
+      // 处理 state 参数：'all' 时不传 state，让 API 返回所有状态
+      const stateParam = options?.state === 'all' ? undefined : options?.state;
       
-      const url = queryParams.toString() ? `${endpoint}?${queryParams.toString()}` : endpoint;
-      const response = await this.gitlab.requester.get(url);
-      return response;
+      return await this.gitlab.MergeRequests.all({
+        projectId,
+        state: stateParam as 'opened' | 'closed' | 'merged' | 'locked' | undefined,
+        orderBy: options?.order_by,
+        sort: options?.sort,
+        perPage: options?.per_page,
+        page: options?.page,
+      });
     });
-    return result as unknown as GitLabMergeRequest[];
+
+    // 确保返回数组格式
+    if (Array.isArray(result)) {
+      return result as unknown as GitLabMergeRequest[];
+    }
+
+    // 如果结果被包装在对象中，尝试提取数组
+    const anyResult = result as unknown as Record<string, unknown>;
+    if (anyResult && typeof anyResult === 'object') {
+      if (Array.isArray(anyResult.data)) {
+        return anyResult.data as unknown as GitLabMergeRequest[];
+      }
+      if (Array.isArray(anyResult.items)) {
+        return anyResult.items as unknown as GitLabMergeRequest[];
+      }
+    }
+
+    // 返回空数组作为兜底
+    this.logger?.warn('Unexpected response format from listMergeRequests', { result });
+    return [];
   }
 }
 

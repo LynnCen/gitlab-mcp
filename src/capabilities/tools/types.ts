@@ -73,6 +73,7 @@ export interface ToolFilter {
 export interface ToolInfo {
   name: string;
   description: string;
+  inputSchema: any; // JSON Schema object
   category?: string;
   tags?: string[];
   plugin?: string;

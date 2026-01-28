@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { ITool } from './Tool.js';
 import type { ToolFilter, ToolInfo, ExecutionContext, ToolResult } from './types.js';
 
@@ -64,6 +65,7 @@ export class ToolRegistry {
     return tools.map((tool) => ({
       name: tool.name,
       description: tool.description,
+      inputSchema: zodToJsonSchema(tool.inputSchema),
       category: tool.metadata?.category,
       tags: tool.metadata?.tags,
       plugin: tool.metadata?.plugin,
