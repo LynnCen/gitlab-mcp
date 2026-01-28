@@ -8,6 +8,7 @@
 
 | 文档 | 说明 |
 |------|------|
+| [快速开始测试](./QUICK-START-TESTING.md) | ⚡ 5分钟快速上手测试 MCP Server |
 | [架构设计](./architecture.md) | 系统架构设计，六层架构详解 |
 | [插件开发指南](./plugin-development-guide.md) | 如何开发和扩展插件 |
 | [MCP Inspector 测试](./MCP-INSPECTOR-TESTING.md) | 使用官方工具测试和调试 MCP Server |
