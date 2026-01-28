@@ -86,7 +86,26 @@ npx @modelcontextprotocol/inspector --help
 
 ### 方法一：Web UI 模式（推荐）
 
-#### 启动 Web UI
+#### 快速启动（使用便捷脚本）
+
+我们提供了一个交互式测试脚本，支持所有测试场景：
+
+```bash
+# 运行交互式测试脚本
+./scripts/test-mcp.sh
+
+# 或指定配置文件
+./scripts/test-mcp.sh mcp-inspector.json gitlab-mcp
+```
+
+脚本提供以下功能：
+1. Web UI 模式 - 可视化测试
+2. 列出工具/资源/提示
+3. 测试 MR 相关工具
+4. 测试文件操作工具
+5. 运行完整测试套件
+
+### 手动启动 Web UI
 
 ```bash
 # 使用配置文件启动（推荐）

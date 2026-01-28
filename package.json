@@ -19,6 +19,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     
+    "test:mcp": "bash scripts/test-mcp.sh",
     "test:mcp:ui": "npx @modelcontextprotocol/inspector --config mcp-inspector.json --server gitlab-mcp",
     "test:mcp:list": "npx @modelcontextprotocol/inspector --cli node dist/src/index.js --method tools/list",
     "test:mcp:resources": "npx @modelcontextprotocol/inspector --cli node dist/src/index.js --method resources/list",
