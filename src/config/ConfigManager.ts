@@ -1,189 +1,187 @@
 /**
- * 配置管理器 - 单例模式
- * 负责管理所有应用配置，包括环境变量读取和验证
+ * 配置管理器
  */
 
-import type { AICodeReviewConfig } from './types.js';
+import { z } from 'zod';
+import type { IConfigProvider } from './ConfigProvider.js';
+import { EnvConfigProvider } from './EnvConfigProvider.js';
+import type { AppConfig, GitLabConfig, ServerConfig, MiddlewareConfig, PluginsConfig } from './types.js';
 
-export interface GitLabConfig {
-  host: string;
-  token: string;
-  timeout?: number;
-  retries?: number;
-}
+/**
+ * GitLab 配置 Schema
+ */
+const GitLabConfigSchema = z.object({
+  host: z.string().url(),
+  token: z.string().min(1),
+  timeout: z.number().positive().optional(),
+  retries: z.number().int().min(0).max(10).optional(),
+});
 
-export interface ServerConfig {
-  port: number;
-  host: string;
-  corsOrigins?: string[];
-}
+/**
+ * 服务器配置 Schema
+ */
+const ServerConfigSchema = z.object({
+  port: z.number().int().min(1).max(65535).optional(),
+  host: z.string().optional(),
+  logLevel: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).optional(),
+  logOutput: z.enum(['console', 'file', 'both']).optional(),
+});
 
-export interface AppConfig {
-  gitlab: GitLabConfig;
-  server: ServerConfig;
-  aiCodeReview: AICodeReviewConfig;
-  debug: boolean;
-}
+/**
+ * 中间件配置 Schema
+ */
+const MiddlewareConfigSchema = z.object({
+  auth: z
+    .object({
+      enabled: z.boolean().optional(),
+      mode: z.enum(['api-key', 'jwt', 'oauth']).optional(),
+      apiKey: z.string().optional(),
+    })
+    .optional(),
+  rateLimit: z
+    .object({
+      enabled: z.boolean().optional(),
+      globalRequests: z.number().int().positive().optional(),
+      globalWindow: z.string().optional(),
+    })
+    .optional(),
+  cache: z
+    .object({
+      enabled: z.boolean().optional(),
+      type: z.enum(['memory', 'redis']).optional(),
+      ttl: z.number().int().positive().optional(),
+    })
+    .optional(),
+});
 
+/**
+ * 插件配置 Schema
+ */
+const PluginsConfigSchema = z.record(z.unknown());
+
+/**
+ * 完整配置 Schema
+ */
+const AppConfigSchema = z.object({
+  gitlab: GitLabConfigSchema,
+  server: ServerConfigSchema.optional(),
+  middleware: MiddlewareConfigSchema.optional(),
+  plugins: PluginsConfigSchema.optional(),
+});
+
+/** 
+ * Zod 推断的配置类型 
+ */
+type ZodAppConfig = z.infer<typeof AppConfigSchema>;
+
+/**
+ * 配置管理器
+ */
 export class ConfigManager {
-  private static instance: ConfigManager;
   private config: AppConfig;
+  private provider: IConfigProvider;
 
-  private constructor() {
-    this.config = this.loadConfig();
-    this.validateConfig();
+  constructor(provider?: IConfigProvider, envFile?: string) {
+    this.provider = provider || new EnvConfigProvider(envFile);
+    this.config = this.load();
   }
 
   /**
-   * 获取单例实例
+   * 加载配置
    */
-  public static getInstance(): ConfigManager {
-    if (!ConfigManager.instance) {
-      ConfigManager.instance = new ConfigManager();
+  private load(): AppConfig {
+    const rawConfig = {
+      gitlab: {
+        host: this.provider.get<string>('GITLAB_HOST', ''),
+        token: this.provider.get<string>('GITLAB_TOKEN', ''),
+        timeout: this.provider.get<number>('GITLAB_TIMEOUT', 30000),
+        retries: this.provider.get<number>('GITLAB_RETRIES', 3),
+      },
+      server: {
+        port: this.provider.get<number>('SERVER_PORT', 3000),
+        host: this.provider.get<string>('SERVER_HOST', '0.0.0.0'),
+        logLevel: this.provider.get<string>('LOG_LEVEL', 'info') as ServerConfig['logLevel'],
+        logOutput: this.provider.get<string>('LOG_OUTPUT', 'console') as ServerConfig['logOutput'],
+      },
+      middleware: {
+        auth: {
+          enabled: this.provider.get<boolean>('AUTH_ENABLED', false),
+          mode: this.provider.get<string>('AUTH_MODE', 'api-key') as 'api-key' | 'jwt' | 'oauth',
+          apiKey: this.provider.get<string | undefined>('API_KEY', undefined),
+        },
+        rateLimit: {
+          enabled: this.provider.get<boolean>('RATE_LIMIT_ENABLED', true),
+          globalRequests: this.provider.get<number>('RATE_LIMIT_GLOBAL_REQUESTS', 100),
+          globalWindow: this.provider.get<string>('RATE_LIMIT_GLOBAL_WINDOW', '1s'),
+        },
+        cache: {
+          enabled: this.provider.get<boolean>('CACHE_ENABLED', true),
+          type: this.provider.get<string>('CACHE_TYPE', 'memory') as 'memory' | 'redis',
+          ttl: this.provider.get<number>('CACHE_TTL', 300),
+        },
+      },
+      plugins: {
+        enabled: this.provider.get<string>('PLUGINS_ENABLED', '').split(',').filter(Boolean),
+      },
+    };
+
+    // 验证配置
+    const result = AppConfigSchema.safeParse(rawConfig);
+    if (!result.success) {
+      throw new Error(`Configuration validation failed: ${result.error.message}`);
     }
-    return ConfigManager.instance;
+
+    // 转换为 AppConfig 类型
+    const validatedConfig = result.data as ZodAppConfig;
+    return {
+      gitlab: validatedConfig.gitlab,
+      server: validatedConfig.server || {},
+      middleware: validatedConfig.middleware || {},
+      plugins: validatedConfig.plugins || {},
+    } as AppConfig;
   }
 
   /**
    * 获取完整配置
    */
-  public getConfig(): AppConfig {
+  getConfig(): AppConfig {
     return { ...this.config };
   }
 
   /**
    * 获取 GitLab 配置
    */
-  public getGitLabConfig(): GitLabConfig {
+  getGitLabConfig(): GitLabConfig {
     return { ...this.config.gitlab };
   }
 
   /**
    * 获取服务器配置
    */
-  public getServerConfig(): ServerConfig {
-    return { ...this.config.server };
+  getServerConfig(): ServerConfig {
+    return { ...(this.config.server || {}) };
   }
 
   /**
-   * 获取AI代码审查配置
+   * 获取中间件配置
    */
-  public getAICodeReviewConfig(): AICodeReviewConfig {
-    return { ...this.config.aiCodeReview };
+  getMiddlewareConfig(): MiddlewareConfig {
+    return { ...(this.config.middleware || {}) };
   }
 
   /**
-   * 是否为调试模式
+   * 获取插件配置
    */
-  public isDebug(): boolean {
-    return this.config.debug;
+  getPluginsConfig(): PluginsConfig {
+    return { ...(this.config.plugins || {}) };
   }
 
   /**
-   * 加载配置
+   * 重新加载配置
    */
-  private loadConfig(): AppConfig {
-    // 读取环境变量
-    const gitlabHost = process.env['GITLAB_HOST'] || 'https://gitlab.com';
-    const gitlabToken = process.env['GITLAB_TOKEN'] || '';
-    const serverPort = parseInt(process.env['PORT'] || '3000');
-    const serverHost = process.env['HOST'] || 'localhost';
-    const debug = process.env['DEBUG'] === 'true' || process.env['NODE_ENV'] === 'development';
-    const corsOrigins = process.env['CORS_ORIGINS']?.split(',') || ['*'];
-
-    // AI代码审查配置
-    const aiCodeReviewEnabled = process.env['AI_CODE_REVIEW_ENABLED'] === 'true';
-    const aiProvider = (process.env['AI_PROVIDER'] || 'local') as 'openai' | 'claude' | 'gemini' | 'local';
-    const aiApiKey = process.env['AI_API_KEY'] || '';
-    const aiModel = process.env['AI_MODEL'] || 'gpt-3.5-turbo';
-    const aiTemperature = parseFloat(process.env['AI_TEMPERATURE'] || '0.1');
-    const aiMaxTokens = parseInt(process.env['AI_MAX_TOKENS'] || '4000');
-    const aiAutoComment = process.env['AI_AUTO_COMMENT'] === 'true';
-    const aiReviewDepth = (process.env['AI_REVIEW_DEPTH'] || 'standard') as 'quick' | 'standard' | 'thorough';
-
-    return {
-      gitlab: {
-        host: gitlabHost,
-        token: gitlabToken,
-        timeout: 30000, // 30秒超时
-        retries: 3, // 重试3次
-      },
-      server: {
-        port: serverPort,
-        host: serverHost,
-        corsOrigins,
-      },
-      aiCodeReview: {
-        enabled: aiCodeReviewEnabled,
-        llmProvider: aiProvider,
-        apiKey: aiApiKey,
-        model: aiModel,
-        temperature: aiTemperature,
-        maxTokens: aiMaxTokens,
-        autoComment: aiAutoComment,
-        reviewDepth: aiReviewDepth,
-      },
-      debug,
-    };
+  async reload(): Promise<void> {
+    await this.provider.reload();
+    this.config = this.load();
   }
+}
 
-  /**
-   * 验证配置
-   */
-  private validateConfig(): void {
-    const errors: string[] = [];
-
-    // 验证 GitLab 配置
-    if (!this.config.gitlab.token) {
-      errors.push('GITLAB_TOKEN 环境变量是必需的');
-    }
-
-    if (!this.config.gitlab.host) {
-      errors.push('GITLAB_HOST 环境变量是必需的');
-    }
-
-    // 验证 GitLab Host 格式
-    try {
-      new URL(this.config.gitlab.host);
-    } catch {
-      errors.push('GITLAB_HOST 必须是有效的 URL');
-    }
-
-    // 验证服务器端口
-    if (this.config.server.port < 1 || this.config.server.port > 65535) {
-      errors.push('PORT 必须在 1-65535 范围内');
-    }
-
-    if (errors.length > 0) {
-      throw new Error(`配置验证失败:\n${errors.join('\n')}`);
-    }
-  }
-
-  /**
-   * 重新加载配置（用于测试）
-   */
-  public reload(): void {
-    this.config = this.loadConfig();
-    this.validateConfig();
-  }
-
-  /**
-   * 获取配置摘要（隐藏敏感信息）
-   */
-  public getConfigSummary(): object {
-    return {
-      gitlab: {
-        host: this.config.gitlab.host,
-        token: this.config.gitlab.token ? `${this.config.gitlab.token.substring(0, 8)}...` : '未设置',
-        timeout: this.config.gitlab.timeout,
-        retries: this.config.gitlab.retries,
-      },
-      server: {
-        port: this.config.server.port,
-        host: this.config.server.host,
-        corsOrigins: this.config.server.corsOrigins,
-      },
-      debug: this.config.debug,
-    };
-  }
-} 

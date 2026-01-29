@@ -1,51 +1,74 @@
-# 文档目录
+# 📚 Documentation
 
-本文档目录包含项目重构相关的所有文档。
+Welcome to the GitLab MCP documentation center.
 
-## 文档结构
+## Quick Links
+
+| Document | Description |
+|----------|-------------|
+| [User Guide (中文)](./user-guide.md) | Detailed usage guide in Chinese |
+| [Configuration](./configuration.md) | Environment and setup guide |
+| [API Reference](./api-reference.md) | Complete API documentation |
+| [Migration Guide](./migration-guide.md) | Upgrade from previous versions |
+
+## Documentation Structure
 
 ```
 docs/
-├── README.md                    # 本文档
-├── api/                         # API 文档
-│   ├── tools/                   # 工具 API 文档
-│   ├── resources/               # 资源 API 文档
-│   └── prompts/                 # 提示 API 文档
-├── developers/                  # 开发者指南
-│   ├── plugin-development.md    # 插件开发指南
-│   └── contributing.md          # 贡献指南
-├── decisions/                   # 设计决策记录
-│   └── tech-stack.md            # 技术选型文档
-├── design/                      # 设计文档
-│   └── interfaces.md            # 核心接口设计
-└── benchmarks/                  # 性能基准
-    └── baseline.md              # 性能基准数据
+├── README.md               # This file
+├── user-guide.md           # User guide (Chinese)
+├── configuration.md        # Configuration guide
+├── api-reference.md        # API reference
+├── migration-guide.md      # Migration guide
+├── development/            # Development docs
+│   ├── README.md           # Development guide index
+│   ├── architecture.md     # System architecture
+│   ├── plugin-development-guide.md
+│   ├── design/             # Design documents
+│   ├── decisions/          # Technical decisions
+│   ├── benchmarks/         # Performance benchmarks
+│   └── getting-started/    # Getting started guides
+├── releases/               # Release notes
+│   └── v2.0.0.md
+└── archive/                # Archived documents
+    ├── testing-reports/    # Test reports
+    └── ...
 ```
 
-## 文档说明
+## By Topic
 
-### API 文档
-- **tools/**: 所有工具的详细 API 说明
-- **resources/**: 所有资源的 URI 规范和说明
-- **prompts/**: 所有提示模板的参数和使用说明
+### Getting Started
 
-### 开发者指南
-- **plugin-development.md**: 如何开发插件的详细教程
-- **contributing.md**: 如何贡献代码的流程说明
+- [Project README](../README.md) - Quick start guide
+- [Configuration](./configuration.md) - Setup and configuration
+- [User Guide](./user-guide.md) - Detailed usage instructions
 
-### 设计决策
-- **tech-stack.md**: 技术选型的详细分析和决策过程
+### For Users
 
-### 设计文档
-- **interfaces.md**: 所有核心接口的详细定义
+- [User Guide](./user-guide.md) - Complete usage guide
+- [API Reference](./api-reference.md) - Tool and resource documentation
+- [Configuration](./configuration.md) - Environment setup
 
-### 性能基准
-- **baseline.md**: 重构前的性能基准数据，用于对比
+### For Developers
 
-## 文档更新原则
+- [Development Guide](./development/README.md) - Development documentation
+- [Architecture](./development/architecture.md) - System architecture
+- [Plugin Development](./development/plugin-development-guide.md) - Creating plugins
+- [Technical Decisions](./development/decisions/tech-stack.md) - Tech stack rationale
 
-1. **同步更新**: 代码变更时同步更新相关文档
-2. **版本控制**: 重要设计决策记录版本和日期
-3. **示例代码**: 文档中包含可运行的示例代码
-4. **清晰易懂**: 使用图表和示例说明复杂概念
+### Reference
 
+- [API Reference](./api-reference.md) - Tools, Resources, and Prompts
+- [Release Notes](./releases/v2.0.0.md) - Version 2.0.0 release notes
+- [Migration Guide](./migration-guide.md) - Upgrading from v1.x
+
+## Other Resources
+
+- [CHANGELOG](../CHANGELOG.md) - Version history
+- [LICENSE](../LICENSE) - Project license
+- [Archive](./archive/README.md) - Historical documents
+
+---
+
+**Last Updated**: 2026-01-29  
+**Documentation Version**: v2.0.0
