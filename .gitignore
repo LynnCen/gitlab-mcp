@@ -14,6 +14,9 @@ build/
 .env.test.local
 .env.production.local
 
+# MCP Inspector config (contains sensitive tokens)
+mcp-inspector.json
+
 # Logs
 logs
 *.log
@@ -53,3 +56,5 @@ coverage/
 
 # Husky
 .husky/_/ 
+
+.pnpm-store/

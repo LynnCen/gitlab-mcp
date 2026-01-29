@@ -624,6 +624,22 @@
 - 行内评论需要访问MR的版本信息和diff数据
 - 确保token对目标项目有足够的访问权限
 
+## 📚 文档
+
+### 完整文档
+
+- **[文档中心](./docs/README.md)** - 所有文档的索引和导航
+- **[使用指南](./USAGE.md)** - 详细的使用说明和示例
+- **[测试文档](./TESTING.md)** - 测试指南和最佳实践
+- **[变更日志](./CHANGELOG.md)** - 版本变更记录
+
+### 开发文档
+
+- **[开发指南](./docs/development/README.md)** - 开发文档索引
+- **[架构设计](./docs/development/architecture.md)** - 系统架构详解
+- **[插件开发](./docs/development/plugin-development-guide.md)** - 插件开发教程
+- **[API 参考](./docs/api-reference.md)** - 完整的 API 文档
+
 ## 🛠️ 开发指南
 
 ### 本地开发
@@ -652,6 +668,8 @@ pnpm start
 3. **创建处理函数**：实现具体的工具逻辑
 4. **测试验证**：构建并测试新工具
 
+详细的开发指南请查看 [开发文档](./docs/development/README.md)。
+
 ### 环境变量
 
 | 变量名 | 说明 | 默认值 | 必需 |
@@ -669,6 +687,8 @@ pnpm start
 - **GitLab API**: @gitbeaker/rest
 - **验证**: Zod
 - **构建**: TypeScript Compiler
+
+完整技术栈说明请查看 [技术选型文档](./docs/development/decisions/tech-stack.md)。
 
 ## 🐛 故障排除
 

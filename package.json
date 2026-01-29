@@ -1,43 +1,42 @@
 {
   "name": "gitlab-mcp-server",
   "version": "2.0.0",
-  "description": "标准的GitLab MCP服务器，支持stdio传输和配置化的GitLab操作",
+  "description": "GitLab MCP Server - 提供 GitLab 集成的 MCP 服务，支持 MR 管理、文件操作和代码审查",
   "main": "dist/src/index.js",
   "type": "module",
   "bin": {
     "gitlab-mcp": "dist/src/index.js"
   },
   "scripts": {
-    "build": "npm run clean && tsc && chmod +x dist/src/index.js",
-    "build:v2": "npm run clean && tsc -p tsconfig-v2.json --skipLibCheck --noEmit false && chmod +x dist/src-v2/index.js",
-    "dev": "tsc --watch",
-    "dev:v2": "tsx watch src-v2/index.ts",
+    "build": "npm run clean && tsc --skipLibCheck && chmod +x dist/src/index.js",
+    "dev": "tsx watch src/index.ts",
     "start": "node dist/src/index.js",
-    "start:v2": "node dist/src-v2/index.js",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build",
-    "test": "tsx tests/integration/mr-changes.test.ts",
-    "test:quick": "tsx tests/integration/quick.test.ts",
-    "test:mr_changes": "tsx tests/integration/mr-changes.test.ts",
-    "test:logs": "ls -la tests/logs/",
-    "test:clean": "rm -rf tests/logs/*",
-    "test:help": "tsx tests/integration/quick.test.ts --help",
-    "test:v2": "vitest",
-    "test:v2:ui": "vitest --ui",
-    "test:v2:coverage": "vitest --coverage",
-    "test:v2:baseline": "tsx tests-v2/benchmarks/performance-baseline.ts",
-    "lint": "eslint src-v2/**/*.ts",
-    "lint:fix": "eslint src-v2/**/*.ts --fix",
-    "format": "prettier --write \"src-v2/**/*.{ts,json,md}\"",
-    "format:check": "prettier --check \"src-v2/**/*.{ts,json,md}\"",
-    "type-check": "tsc --noEmit",
-    "type-check:v2": "tsc -p tsconfig-v2.json --noEmit"
+    
+    "test": "vitest",
+    "test:run": "vitest --run",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    
+    "test:mcp": "bash scripts/test-mcp.sh",
+    "test:mcp:ui": "npx @modelcontextprotocol/inspector --config mcp-inspector.json --server gitlab-mcp",
+    "test:mcp:list": "npx @modelcontextprotocol/inspector --cli node dist/src/index.js --method tools/list",
+    "test:mcp:resources": "npx @modelcontextprotocol/inspector --cli node dist/src/index.js --method resources/list",
+    "test:mcp:prompts": "npx @modelcontextprotocol/inspector --cli node dist/src/index.js --method prompts/list",
+    
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "format": "prettier --write \"src/**/*.{ts,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,json,md}\"",
+    "type-check": "tsc --noEmit"
   },
   "keywords": [
     "gitlab",
     "mcp",
     "model-context-protocol",
     "merge-request",
+    "code-review",
     "stdio",
     "typescript"
   ],
@@ -46,22 +45,25 @@
   "dependencies": {
     "@gitbeaker/rest": "^43.0.0",
     "@modelcontextprotocol/sdk": "^1.15.1",
-    "dotenv": "^17.2.0",
-    "zod": "^3.22.4"
+    "node-cache": "^5.1.2",
+    "pino": "^8.21.0",
+    "zod": "^3.22.4",
+    "zod-to-json-schema": "^3.22.4"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "tsx": "^4.20.3",
-    "typescript": "^5.3.3",
-    "vitest": "^1.6.0",
+    "dotenv": "^17.2.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
     "@vitest/ui": "^1.6.0",
     "c8": "^8.0.1",
     "eslint": "^8.57.0",
-    "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@typescript-eslint/parser": "^7.18.0",
-    "prettier": "^3.3.3",
     "husky": "^9.0.11",
-    "lint-staged": "^15.2.10"
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.3.3",
+    "tsx": "^4.20.3",
+    "typescript": "^5.3.3",
+    "vitest": "^1.6.0"
   },
   "engines": {
     "node": ">=18.0.0"
