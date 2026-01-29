@@ -1,119 +1,74 @@
-# 📚 GitLab MCP 文档中心
+# 📚 Documentation
 
-欢迎来到 GitLab MCP 项目文档中心。本文档中心包含项目的所有技术文档和指南。
+Welcome to the GitLab MCP documentation center.
 
-## 📖 文档结构
+## Quick Links
+
+| Document | Description |
+|----------|-------------|
+| [User Guide (中文)](./user-guide.md) | Detailed usage guide in Chinese |
+| [Configuration](./configuration.md) | Environment and setup guide |
+| [API Reference](./api-reference.md) | Complete API documentation |
+| [Migration Guide](./migration-guide.md) | Upgrade from previous versions |
+
+## Documentation Structure
 
 ```
 docs/
-├── README.md                          # 本文档
-├── api-reference.md                   # API 参考文档
-├── migration-guide.md                 # 迁移指南
-├── release-notes-v2.0.0.md           # 版本发布说明
-├── api/                               # API 详细文档
-├── development/                       # 开发相关文档
-│   ├── README.md                      # 开发文档索引
-│   ├── architecture.md                # 架构设计
-│   ├── plugin-development-guide.md    # 插件开发指南
-│   ├── design/                        # 设计文档
-│   ├── decisions/                     # 技术决策
-│   ├── benchmarks/                    # 性能基准
-│   └── getting-started/               # 快速开始
-└── archive/                           # 历史文档归档
-    └── README.md                      # 归档说明
+├── README.md               # This file
+├── user-guide.md           # User guide (Chinese)
+├── configuration.md        # Configuration guide
+├── api-reference.md        # API reference
+├── migration-guide.md      # Migration guide
+├── development/            # Development docs
+│   ├── README.md           # Development guide index
+│   ├── architecture.md     # System architecture
+│   ├── plugin-development-guide.md
+│   ├── design/             # Design documents
+│   ├── decisions/          # Technical decisions
+│   ├── benchmarks/         # Performance benchmarks
+│   └── getting-started/    # Getting started guides
+├── releases/               # Release notes
+│   └── v2.0.0.md
+└── archive/                # Archived documents
+    ├── testing-reports/    # Test reports
+    └── ...
 ```
 
-## 🚀 快速导航
+## By Topic
 
-### 用户文档
+### Getting Started
 
-| 文档 | 说明 |
-|------|------|
-| [项目 README](../README.md) | 项目概览和快速开始 |
-| [使用指南](../USAGE.md) | 详细的使用说明 |
-| [测试文档](../TESTING.md) | 测试指南 |
-| [API 参考](./api-reference.md) | 完整的 API 文档 |
-| [迁移指南](./migration-guide.md) | 从旧版本迁移 |
-| [发布说明](./release-notes-v2.0.0.md) | v2.0.0 版本说明 |
+- [Project README](../README.md) - Quick start guide
+- [Configuration](./configuration.md) - Setup and configuration
+- [User Guide](./user-guide.md) - Detailed usage instructions
 
-### 开发文档
+### For Users
 
-| 文档 | 说明 |
-|------|------|
-| [开发指南](./development/README.md) | 开发文档索引 |
-| [架构设计](./development/architecture.md) | 系统架构说明 |
-| [插件开发](./development/plugin-development-guide.md) | 插件开发教程 |
-| [环境搭建](./development/getting-started/setup.md) | 开发环境设置 |
-| [技术决策](./development/decisions/tech-stack.md) | 技术选型记录 |
-| [接口设计](./development/design/interfaces.md) | 核心接口定义 |
-| [性能基准](./development/benchmarks/baseline.md) | 性能测试数据 |
+- [User Guide](./user-guide.md) - Complete usage guide
+- [API Reference](./api-reference.md) - Tool and resource documentation
+- [Configuration](./configuration.md) - Environment setup
 
-### 其他资源
+### For Developers
 
-| 资源 | 说明 |
-|------|------|
-| [变更日志](../CHANGELOG.md) | 版本变更记录 |
-| [历史文档](./archive/README.md) | 归档的历史文档 |
-| [许可证](../LICENSE) | 项目许可证 |
+- [Development Guide](./development/README.md) - Development documentation
+- [Architecture](./development/architecture.md) - System architecture
+- [Plugin Development](./development/plugin-development-guide.md) - Creating plugins
+- [Technical Decisions](./development/decisions/tech-stack.md) - Tech stack rationale
 
-## 📝 文档编写规范
+### Reference
 
-### 文件命名规范
+- [API Reference](./api-reference.md) - Tools, Resources, and Prompts
+- [Release Notes](./releases/v2.0.0.md) - Version 2.0.0 release notes
+- [Migration Guide](./migration-guide.md) - Upgrading from v1.x
 
-- 使用小写字母和连字符：`plugin-development-guide.md`
-- README 使用大写：`README.md`
-- 特殊文档使用大写：`USAGE.md`, `TESTING.md`, `CHANGELOG.md`
+## Other Resources
 
-### 文档结构规范
-
-1. **标题层级**: 文档标题使用 `#`，子标题使用 `##`，最多到 `####`
-2. **代码示例**: 使用三重反引号标注语言类型
-3. **链接**: 使用相对路径链接其他文档
-4. **表格**: 使用 Markdown 表格格式，保持对齐
-5. **图片**: 存放在 `docs/images/` 目录
-
-### 更新原则
-
-1. **同步更新**: 代码变更时同步更新相关文档
-2. **版本标注**: 重要变更记录版本号和日期
-3. **示例完整**: 提供可运行的完整示例
-4. **清晰准确**: 使用简洁明确的语言
-
-## 🔍 按主题查找
-
-### MCP 协议相关
-
-- [API 参考文档](./api-reference.md) - MCP 工具、资源、提示的完整 API
-- [架构设计](./development/architecture.md) - MCP 协议层实现
-- [插件开发](./development/plugin-development-guide.md) - 扩展 MCP 功能
-
-### GitLab 集成相关
-
-- [使用指南](../USAGE.md) - GitLab API 使用示例
-- [项目 README](../README.md) - GitLab Token 配置
-- [迁移指南](./migration-guide.md) - GitLab API 版本兼容
-
-### 开发和调试
-
-- [开发环境](./development/getting-started/setup.md) - 本地开发设置
-- [测试文档](../TESTING.md) - 单元测试和集成测试
-- [性能基准](./development/benchmarks/baseline.md) - 性能测试和优化
-
-### 架构和设计
-
-- [架构设计](./development/architecture.md) - 六层架构说明
-- [技术决策](./development/decisions/tech-stack.md) - 技术栈选型
-- [接口设计](./development/design/interfaces.md) - 核心接口定义
-
-## 📮 反馈和贡献
-
-如果您发现文档有误或需要改进，欢迎：
-
-1. 提交 Issue 报告问题
-2. 提交 PR 改进文档
-3. 在讨论区提出建议
+- [CHANGELOG](../CHANGELOG.md) - Version history
+- [LICENSE](../LICENSE) - Project license
+- [Archive](./archive/README.md) - Historical documents
 
 ---
 
-**最后更新**: 2026-01-28  
-**文档版本**: v2.0.0
+**Last Updated**: 2026-01-29  
+**Documentation Version**: v2.0.0
